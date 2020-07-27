@@ -9,15 +9,15 @@ concrete QueryEng of Query = open
     -- LinKind and LinTerm are defined later in this file
     Kind = LinKind ;
     Term = LinTerm ;
+    Determiner = LinDet ;
+    Conjunction = LinConj ;
+    [Term] = ListLinTerm ;
 
     -- Following categories on the RHS (Text, QS etc.) come from SyntaxEng
     Move = Text ;
     Query = QS ;
     Property = AP ;  -- Simplification: later use https://github.com/GrammaticalFramework/gf-contrib/blob/master/YAQL/YAQLFunctor.gf#L19
-    Determiner = Det ;
-    Conjunction = ParamX.Polarity => Conj ;
     [Property] = ListAP ;
-    [Term] = ListNP ;
 
 
   linref
@@ -51,12 +51,12 @@ concrete QueryEng of Query = open
     MDefTerm kind term = mkText (mkUtt (mkCl (defTerm kind) (mkV2 (mkV "mean")) (np term))) fullStopPunct ;
 
     -- Determiners
-    ASg = aSg_Det ;
-    APl = aPl_Det ;
-    TheSg = theSg_Det ;
-    ThePl = thePl_Det ;
-    Any = any_Det ;
-    All = all_Det ;
+    ASg = \\_ => aSg_Det ;
+    APl = \\_ => aPl_Det ;
+    TheSg = \\_ => theSg_Det ;
+    ThePl = \\_ => thePl_Det ;
+    Any = \\_ => any_Det ;
+    All = table {Pos => all_Det ; Neg => any_Det} ;
 
     -- Kinds, Terms and Properties
     -- : Determiner -> Kind -> Term
@@ -94,16 +94,25 @@ concrete QueryEng of Query = open
     -- Unlike in {Base,Cons}Property, now we transform t1 and t2 into NPs.
     -- (Actually their type is already NP, but if this changes later,
     -- we need to change only the definition of 'np', only in one place.)
-    BaseTerm t1 t2 = mkListNP (np t1) (np t2) ; -- : NP -> NP -> ListNP
-    ConsTerm t1 ts = mkListNP (np t1) ts;       -- : NP -> ListNP -> ListNP
-    ConjTerm co = mkNP (co ! Pos) ;                           -- : Conj -> ListNP -> NP ;
+    BaseTerm t1 t2 = \\pol =>
+      mkListNP (t1 ! pol) (t2 ! pol) ; -- : NP -> NP -> ListNP
+    ConsTerm t1 ts = \\pol =>
+      mkListNP (t1 ! pol) (ts ! pol) ; -- : NP -> ListNP -> ListNP
+    ConjTerm co ts = \\pol =>
+      let conj : Conj = case pol of {
+            Pos => co ! Pos ;
+            Neg => or_Conj } ; -- neither-nor only for verbs, negation of and and or is or
+      mkNP (co ! pol) (ts ! pol) ;     -- : Conj -> ListNP -> NP ;
 
   -----------------------------------------------------------------
 
   oper
 
     LinKind : Type = {cn : CN ; adv : Adv} ;
-    LinTerm : Type = NP ; -- For now just a NP, but may change to more complex
+    LinTerm : Type = ParamX.Polarity => NP ; -- For now just a NP, but may change to more complex
+    LinConj : Type = ParamX.Polarity => Conj ;
+    LinDet : Type = ParamX.Polarity => Det ;
+    ListLinTerm : Type = ParamX.Polarity => ListNP ;
 
     neither7nor_DConj : Conj = mkConj "neither" "nor" singular ;
 
@@ -129,16 +138,16 @@ concrete QueryEng of Query = open
     adv2ap : Adv -> AP = AdjectiveEng.AdvAP emptyAP ; -- RGL has no Adv->AP fun
 
     -- Combine Determiner (RGL Det) and Kind (our custom record) into a Term (RGL NP)
-    term : Det -> LinKind -> LinTerm = \det,kind -> mkNP det (merge kind) ;
+    term : LinDet -> LinKind -> LinTerm = \dets,kind ->
+      \\pol => mkNP (dets ! pol) (merge kind) ;
 
-    defTerm : LinKind -> LinTerm = term emptyDet ;
+    defTerm : LinKind -> NP = \k -> (term (\\_ => emptyDet) k) ! Pos ;
 
     -- Merge the discontinuous Kind into a single CN
     merge : LinKind -> CN = \kind -> mkCN kind.cn kind.adv ;
 
-    -- Just identity function for now, but if Term changes category to something
-    -- more complex, then we only need to change this oper and not all the files.
-    np : LinTerm -> NP = id NP ;
+    -- Default use for most NPs: pick the positive version (e.g. "some car", not "any car")
+    np : LinTerm -> NP = \lt -> lt ! ParamX.Pos ;
 
     -- np2cn : NP -> CN = \np -> let s : Str = (mkUtt np).s in mkCN (mkN s s s s) ;
 }

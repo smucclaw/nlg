@@ -65,14 +65,14 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
       } ;
 
     'BaseAction/Dir' a1 a2 =
-      let a1' : LinAction = complDir a1 emptyNP ;
-          a2' : LinAction = complDir a2 emptyNP ;
+      let a1' : LinAction = complDir a1 emptyTerm ;
+          a2' : LinAction = complDir a2 emptyTerm ;
       in BaseAction a1' a2' ** {
         dir = a1.dir ; -- : PrepPol
         indir = \\p => emptyAdv ; -- the existing indir has been incorporated in a1' and a2'
       } ;
     'ConsAction/Dir' a as =
-      let a' : LinAction = complDir a emptyNP ;
+      let a' : LinAction = complDir a emptyTerm ;
       in ConsAction a' <as:ListLinAction> ** {
         dir = as.dir ; -- : PrepPol
         indir = \\p => emptyAdv
@@ -83,14 +83,14 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
       } ;
 
     'BaseAction/Indir' a1 a2 =
-      let a1' : LinAction = complIndir a1 emptyNP ;
-          a2' : LinAction = complIndir a2 emptyNP ;
+      let a1' : LinAction = complIndir a1 emptyTerm ;
+          a2' : LinAction = complIndir a2 emptyTerm ;
       in BaseAction a1' a2' ** {
         indir = a1.indir ; -- : PrepPol
        dir = \\p => emptyAdv ; -- the existing dir has been incorporated in a1' and a2'
       } ;
     'ConsAction/Indir' a as =
-      let a' : LinAction = complIndir a emptyNP ;
+      let a' : LinAction = complIndir a emptyTerm ;
       in ConsAction a' <as:ListLinAction> ** {
         indir = as.indir ; -- : PrepPol
         dir = \\p => emptyAdv
@@ -134,13 +134,14 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
       } ;
 
     linAction : LinAction -> Str = \l ->
-      (mkUtt (cl presentTense positivePol emptyNP l)).s ;
+      (mkUtt (cl presentTense positivePol emptyTerm l)).s ;
 
     mkVPS : R.Tense -> R.CPolarity -> VP -> E.VPS = \t,p ->
       let tense : Tense = lin Tense {s=[] ; t=t} ;
           pol : Pol = lin Pol {s=[] ; p=p} ;
        in E.MkVPS (mkTemp tense simultaneousAnt) pol ;
 
+    emptyTerm : LinTerm = \\_ => emptyNP ;
     ----------------------
     -- Slash categories --
     ----------------------
@@ -160,14 +161,14 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
       indir = \\_ => emptyAdv ;
       } ;
     slashDir : SlashDirIndir -> LinTerm -> SlashIndir = \vps,do -> vps ** {
-      dir = applyPrepPol vps.dir (np do)
+      dir = applyPrepPol vps.dir do
       } ;
     complDir : SlashDir -> LinTerm -> LinAction = \vps,do -> vps ** {
       s = \\t,p => complS (vps.s ! t ! p)
-                          (applyPrepPol vps.dir (np do) ! p)
+                          (applyPrepPol vps.dir do ! p)
                           (vps.indir ! p) ;
       gerund = \\p => complGer (vps.gerund ! p)
-                            (applyPrepPol vps.dir (np do) ! p)
+                            (applyPrepPol vps.dir do ! p)
                             (vps.indir ! p) ;
       } ;
 
@@ -181,15 +182,15 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
       indir = prepPol v2.c2 ;
       } ;
     slashIndir : SlashDirIndir -> LinTerm -> SlashDir = \vps,io -> vps ** {
-      indir = applyPrepPol vps.indir (np io)
+      indir = applyPrepPol vps.indir io
       } ;
     complIndir : SlashIndir -> LinTerm -> LinAction = \vps,io -> vps ** {
       s = \\t,p => complS (vps.s ! t ! p)
                           (vps.dir ! p)
-                          (applyPrepPol vps.indir (np io) ! p) ;
+                          (applyPrepPol vps.indir io ! p) ;
       gerund = \\p => complGer (vps.gerund ! p)
                             (vps.dir ! p)
-                            (applyPrepPol vps.indir (np io) ! p)
+                            (applyPrepPol vps.indir io ! p)
       } ;
 
 
@@ -234,8 +235,9 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
       redupl = r
       } ;
 
-    applyPrepPol : PrepPol -> NP -> (R.CPolarity=>Adv) = \pp,np -> \\pol =>
-      let npacc : Str = np.s ! R.NPAcc ;
+    applyPrepPol : PrepPol -> LinTerm -> (R.CPolarity=>Adv) = \pp,term -> \\pol =>
+      let np : NP = term ! cpol2pol pol ;
+          npacc : Str = np.s ! R.NPAcc ;
           prep : PrepPlus = pp ! pol
       in lin Adv {
         s = prep.s ++ npacc ++ prep.post ++ case prep.redupl of {
@@ -360,10 +362,10 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     -- Terms --
     -----------
     -- : Term
-    Company = mkNP theSg_Det (mkN "Company") ;
+    Company = \\_ => mkNP theSg_Det (mkN "Company") ;
 
     -- : Term -> Term ;
-    Creditors t =          -- the company's creditors
+    Creditors t = \\_ =>   -- the company's creditors
       mkNP (mkDet (ExtendEng.GenNP (np t)) pluralNum) creditor_N ;
 
     -- : Determiner -> Kind -> Term -> Term ;
@@ -389,8 +391,8 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     -------------
     -- Lexicon --
     -------------
-    any_other_Det : Det = a_Det ** {s = "any other"} ;
-    series_Det : Det = aPl_Det ** {s = "a series of"} ;
+    any_other_Det : LinDet = \\_ => a_Det ** {s = "any other"} ;
+    series_Det : LinDet = \\_ => aPl_Det ** {s = "a series of"} ;
 
     raise_V2 : V2 = mkV2 (mkV "raise") ;
     sell_V2 : V2 = mkV2 (mkV "sell") ;
