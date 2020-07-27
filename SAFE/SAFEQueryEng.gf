@@ -368,7 +368,7 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     Creditors t = \\_ =>   -- the company's creditors
       mkNP (mkDet (ExtendEng.GenNP (np t)) pluralNum) creditor_N ;
 
-    -- : Determiner -> Kind -> Term -> Term ;
+{-    -- : Determiner -> Kind -> Term -> Term ;
     TExcluding the valuation t =
       let exclAdv : Adv = parenss (adv excluding_Prep (np t)) ; -- The adv "excluding post-money"
           valuation_excl : Kind = valuation ** {
@@ -382,7 +382,7 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
           valuation_incl : Kind = valuation ** {
             cn = ExtAdvCN valuation.cn inclAdv  -- first layer: "valuation including pre-money"
             } ; -- Potential postmodifier is in valuation's adv field
-      in term the valuation_incl ;
+      in term the valuation_incl ; -}
 
     AnyOther = any_other_Det ;
     Series = series_Det ;
@@ -391,8 +391,8 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     -------------
     -- Lexicon --
     -------------
-    any_other_Det : LinDet = \\_ => a_Det ** {s = "any other"} ;
-    series_Det : LinDet = \\_ => aPl_Det ** {s = "a series of"} ;
+    any_other_Det : LinDet = \\_,_ => a_Det ** {s = "any other"} ;
+    series_Det : LinDet = \\_,_ => aPl_Det ** {s = "a series of"} ;
 
     raise_V2 : V2 = mkV2 (mkV "raise") ;
     sell_V2 : V2 = mkV2 (mkV "sell") ;
@@ -421,7 +421,7 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     ----------
     -- Misc --
     ----------
-    linkind : CN -> LinKind = \cn -> {cn = cn ; adv = emptyAdv} ;
+    linkind : CN -> LinKind = \cn -> {cn = cn ; adv = emptyAdv ; k = Count} ;
 
     adv : Prep -> NP -> Adv = SyntaxEng.mkAdv ; -- shorthand: mkAdv is imported from two modules, so it has to be qualified
     prop : Str -> AP = \a -> mkAP (mkA a) ;

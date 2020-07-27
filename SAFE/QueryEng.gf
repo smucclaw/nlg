@@ -51,12 +51,36 @@ concrete QueryEng of Query = open
     MDefTerm kind term = mkText (mkUtt (mkCl (defTerm kind) (mkV2 (mkV "mean")) (np term))) fullStopPunct ;
 
     -- Determiners
-    ASg = \\_ => aSg_Det ;
-    APl = \\_ => aPl_Det ;
-    TheSg = \\_ => theSg_Det ;
-    ThePl = \\_ => thePl_Det ;
-    Any = \\_ => any_Det ;
-    All = table {Pos => all_Det ; Neg => any_Det} ;
+    ASg = table {
+      Mass => \\_ => emptyDet ;
+      Count => \\_ => aSg_Det ;
+      Plural => \\_ => aPl_Det
+      } ;
+    APl = table {
+      Mass => \\_ => emptyDet ;
+      Count => \\_ => aPl_Det ;
+      Plural => \\_ => aPl_Det
+      } ;
+    TheSg = table {
+      Mass => \\_ => theSg_Det ;
+      Count => \\_ => theSg_Det ;
+      Plural => \\_ => thePl_Det
+      } ;
+    ThePl = table {
+      Mass => \\_ => thePl_Det ;
+      Count => \\_ => thePl_Det ;
+      Plural => \\_ => thePl_Det
+      } ;
+    Any = table {
+      Mass => \\_ => anySg_Det ;
+      Count => \\_ => anySg_Det ;
+      Plural => \\_ => anyPl_Det
+      } ;
+    All = table {
+      Mass => table {Pos => allSg_Det ; Neg => anySg_Det} ;
+      Count => table {Pos => all_Det ; Neg => anySg_Det} ;
+      Plural => table {Pos => all_Det ; Neg => anyPl_Det}
+      } ;
 
     -- Kinds, Terms and Properties
     -- : Determiner -> Kind -> Term
@@ -102,16 +126,21 @@ concrete QueryEng of Query = open
       let conj : Conj = case pol of {
             Pos => co ! Pos ;
             Neg => or_Conj } ; -- neither-nor only for verbs, negation of and and or is or
-      mkNP (co ! pol) (ts ! pol) ;     -- : Conj -> ListNP -> NP ;
-
+      in  mkNP conj (ts ! pol) ;     -- : Conj -> ListNP -> NP ;
   -----------------------------------------------------------------
+  param
+    KType = Mass | Count | Plural ;
 
   oper
 
-    LinKind : Type = {cn : CN ; adv : Adv} ;
-    LinTerm : Type = ParamX.Polarity => NP ; -- For now just a NP, but may change to more complex
+    LinKind : Type = {
+      cn : CN ;
+      adv : Adv ;
+      k : KType
+      } ;
+    LinTerm : Type = ParamX.Polarity => NP ;
     LinConj : Type = ParamX.Polarity => Conj ;
-    LinDet : Type = ParamX.Polarity => Det ;
+    LinDet : Type = KType => ParamX.Polarity => Det ;
     ListLinTerm : Type = ParamX.Polarity => ListNP ;
 
     neither7nor_DConj : Conj = mkConj "neither" "nor" singular ;
@@ -120,10 +149,16 @@ concrete QueryEng of Query = open
     -- Determiners are supposed to be closed class, so the constructor isn't
     -- exported in the API. (Silly, if you ask me.)
     -- The options are: open a low-level module and use the hidden constructor, or do this hack.
-    any_Det : Det = a_Det ** { -- Extend a_Det: keyword ** is record extension
+    anySg_Det : Det = a_Det ** { -- Extend a_Det: keyword ** is record extension
       s = "any"                -- Keep other fields from a_Det, but replace s with "any"
       } ;
+    anyPl_Det : Det = aPl_Det ** {
+      s = "any"
+      } ;
     all_Det : Det = aPl_Det ** {
+      s = "all"
+      } ;
+    allSg_Det : Det = a_Det ** {
       s = "all"
       } ;
     emptyDet : Det = a_Det ** {
@@ -137,17 +172,17 @@ concrete QueryEng of Query = open
     ap2adv : AP -> Adv = \ap -> lin Adv (mkUtt ap) ;  -- RGL has no AP->Adv fun
     adv2ap : Adv -> AP = AdjectiveEng.AdvAP emptyAP ; -- RGL has no Adv->AP fun
 
-    -- Combine Determiner (RGL Det) and Kind (our custom record) into a Term (RGL NP)
+    -- Combine Determiner and Kind into a Term
     term : LinDet -> LinKind -> LinTerm = \dets,kind ->
-      \\pol => mkNP (dets ! pol) (merge kind) ;
+      \\pol => mkNP (dets ! kind.k ! pol) (merge kind) ;
 
-    defTerm : LinKind -> NP = \k -> (term (\\_ => emptyDet) k) ! Pos ;
+    defTerm : LinKind -> NP = \k -> mkNP (merge k) ;
 
     -- Merge the discontinuous Kind into a single CN
     merge : LinKind -> CN = \kind -> mkCN kind.cn kind.adv ;
 
     -- Default use for most NPs: pick the positive version (e.g. "some car", not "any car")
-    np : LinTerm -> NP = \lt -> lt ! ParamX.Pos ;
+    np : LinTerm -> NP = \lt -> lt ! Pos ;
 
     -- np2cn : NP -> CN = \np -> let s : Str = (mkUtt np).s in mkCN (mkN s s s s) ;
 }
