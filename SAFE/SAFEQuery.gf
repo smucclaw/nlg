@@ -61,8 +61,7 @@ abstract SAFEQuery = Query ** {
     PreMoney,
     PostMoney,
     BonaFide,
-    Voluntary,
-    Involuntary : Property ;
+    Voluntary : Property ;
 
 
     ForBenefit   -- general assignment for the benefit of the Company's creditors

@@ -58,7 +58,7 @@ concrete QueryEng of Query = open
       Plural => \\_ => aPl_Det
       } ;
     APl = table {
-      Mass => \\_ => emptyDet ;
+      Mass => \\_ => aPl_Det ; -- or emptyDet ;
       Count => \\_ => aPl_Det ;
       Plural => \\_ => aPl_Det
       } ;

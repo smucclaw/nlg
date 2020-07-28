@@ -326,7 +326,7 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     -- Kinds --
     -----------
     Event = kind "event" ;
-    Capital = kind "capital" ;
+    Capital = kind "capital" ** {k = Mass} ;
 
     DissolutionEvent = adjkind "dissolution" "event" ;
     Termination = ofkind "termination" "operations" ;
@@ -337,9 +337,9 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     DirectListing = adjkind "direct" "listing" ;
     InitialPublicOffering = linkind (mkCN (mkA "initial") (adjkind "public" "offering").cn) ;
 
-    EquityFinancing = adjkind "equity" "financing" ;
+    EquityFinancing = adjkind "equity" "financing" ** {k = Mass} ;
     Transaction = kind "transaction" ;
-    PreferredStock = adjkind "preferred" "stock" ;
+    PreferredStock = adjkind "preferred" "stock" ** {k = Mass};
     Valuation = kind "valuation" ;
 
   lincat
@@ -398,7 +398,7 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     -- Lexicon --
     -------------
     any_other_Det : LinDet = \\_,_ => a_Det ** {s = "any other"} ;
-    series_Det : LinDet = \\_,_ => aPl_Det ** {s = "a series of"} ;
+    series_Det : LinDet = \\_,_ => aPl_Det ** {s = "series of"} ;
 
     raise_V2 : V2 = mkV2 (mkV "raise") ;
     sell_V2 : V2 = mkV2 (mkV "sell") ;
