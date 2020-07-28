@@ -368,7 +368,7 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     Creditors t = \\_ =>   -- the company's creditors
       mkNP (mkDet (ExtendEng.GenNP (np t)) pluralNum) creditor_N ;
 
-{-    -- : Determiner -> Kind -> Term -> Term ;
+    -- : Determiner -> Kind -> Term -> Term ;
     TExcluding the valuation t =
       let exclAdv : Adv = parenss (adv excluding_Prep (np t)) ; -- The adv "excluding post-money"
           valuation_excl : Kind = valuation ** {
@@ -382,7 +382,7 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
           valuation_incl : Kind = valuation ** {
             cn = ExtAdvCN valuation.cn inclAdv  -- first layer: "valuation including pre-money"
             } ; -- Potential postmodifier is in valuation's adv field
-      in term the valuation_incl ; -}
+      in term the valuation_incl ;
 
     AnyOther = any_other_Det ;
     Series = series_Det ;

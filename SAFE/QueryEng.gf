@@ -3,6 +3,7 @@ concrete QueryEng of Query = open
   AdjectiveEng,
   SyntaxEng,
   ParamX,
+  (R=ResEng),
   ParadigmsEng in {
 
   lincat
@@ -132,6 +133,7 @@ concrete QueryEng of Query = open
     KType = Mass | Count | Plural ;
 
   oper
+    DetLite : Type = {s : Str ;  n : ParamX.Number} ;
 
     LinKind : Type = {
       cn : CN ;
@@ -140,7 +142,7 @@ concrete QueryEng of Query = open
       } ;
     LinTerm : Type = ParamX.Polarity => NP ;
     LinConj : Type = ParamX.Polarity => Conj ;
-    LinDet : Type = KType => ParamX.Polarity => Det ;
+    LinDet : Type = KType => ParamX.Polarity => DetLite ;
     ListLinTerm : Type = ParamX.Polarity => ListNP ;
 
     neither7nor_DConj : Conj = mkConj "neither" "nor" singular ;
@@ -174,7 +176,7 @@ concrete QueryEng of Query = open
 
     -- Combine Determiner and Kind into a Term
     term : LinDet -> LinKind -> LinTerm = \dets,kind ->
-      \\pol => mkNP (dets ! kind.k ! pol) (merge kind) ;
+      \\pol => detCNLite (dets ! kind.k ! pol) (merge kind) ;
 
     defTerm : LinKind -> NP = \k -> mkNP (merge k) ;
 
@@ -185,4 +187,10 @@ concrete QueryEng of Query = open
     np : LinTerm -> NP = \lt -> lt ! Pos ;
 
     -- np2cn : NP -> CN = \np -> let s : Str = (mkUtt np).s in mkCN (mkN s s s s) ;
+
+    -- copied from RGL to work with DetLite
+    detCNLite : DetLite -> CN -> NP = \det,cn -> lin NP {
+      s = \\c => det.s ++ cn.s ! det.n ! R.npcase2case c ;
+      a = R.agrgP3 det.n cn.g
+      } ;
 }
