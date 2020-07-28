@@ -32,6 +32,13 @@ abstract SAFEQuery = Query ** {
     ASlashDir   : 'Action/Dir/Indir' -> Term -> 'Action/Indir' ; -- sell stock (at fixed valuation)
     ASlashIndir : 'Action/Dir/Indir' -> Term -> 'Action/Dir' ;   -- sell (stock) at fixed valuation
 
+    -- Negation of a whole Action: doesn't sell X / doesn't sell X and Y
+    ANeg : Action -> Action ;
+
+    -- Negation regarding the complements
+    AComplNoneDir   : 'Action/Dir' -> [Term] -> Action ; -- sells neither X, Y nor Z
+    AComplNoneIndir : 'Action/Indir' -> [Term] -> Action ; -- sells (X) neither to B nor to B
+
     -- Conjunctions
 
     ConjAction : Conjunction -> [Action] -> Action ;
@@ -51,7 +58,7 @@ abstract SAFEQuery = Query ** {
     PPositive : Polarity ;
     PNegative : Polarity ;
 
-    MAction : Temporality -> Polarity ->
+    MAction : Temporality -> -- Polarity ->
       Term -> Action -> Move ; -- the company raises/raised/doesn't raise capital
 
   ----------------

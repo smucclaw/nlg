@@ -49,19 +49,33 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     -- : 'Action/Dir/Indir' -> Term -> 'Action/Dir' ;   -- sell (stock) at fixed valuation
     ASlashIndir = slashIndir ;
 
+    -- Negations
+    -- : Action -> Action ;        -- doesn't sell X / doesn't sell X and Y
+    ANeg action = action ** {
+      s = \\t,p => action.s ! t ! negativePol.p ;
+      gerund = \\p => action.gerund ! negativePol.p
+      } ;
+    -- : 'Action/Dir' -> [Term] -> Action ; -- sells neither X, Y nor Z
+    AComplNoneDir v2 objs =
+      let none_of : NP = mkNP neither7nor_DConj (objs ! R.Pos) ;
+       in complDir v2 (\\_ => none_of) ;
+
+    --  AComplNoneIndir : 'Action/Indir' -> [Term] -> Action ; -- sells (X) neither to B nor to B
+
+
     -- Conjunctions
     BaseAction a1 a2 = {
-      s = \\t,p => E.BaseVPS (a1.s ! t ! R.CPos) (a2.s ! t ! R.CPos) ; -- "doesn't sell and issue"
-      gerund = \\p => mkListAdv (a1.gerund ! R.CPos) (a2.gerund ! R.CPos)
+      s = \\t,p => E.BaseVPS (a1.s ! t ! p) (a2.s ! t ! p) ; -- "doesn't sell and issue"
+      gerund = \\p => mkListAdv (a1.gerund ! p) (a2.gerund ! p)
       } ;
     ConsAction a as = {
-      s = \\t,p => E.ConsVPS (a.s ! t ! R.CPos) (as.s ! t ! R.CPos) ;
-      gerund = \\p => mkListAdv (a.gerund ! R.CPos) (as.gerund ! R.CPos)
+      s = \\t,p => E.ConsVPS (a.s ! t ! p) (as.s ! t ! p) ;
+      gerund = \\p => mkListAdv (a.gerund ! p) (as.gerund ! p)
       } ;
     ConjAction co as = {
-      s = \\t,p =>  let conj : Conj = co ! cpol2pol p in E.ConjVPS conj (as.s ! t ! p) ;
+      s = \\t,p =>  let conj : Conj = co ! cpol2pol p in E.ConjVPS (co ! R.Pos) (as.s ! t ! p) ;
       gerund = \\p => let conj : Conj = co ! cpol2pol p in
-        SyntaxEng.mkAdv conj (as.gerund ! p)
+        SyntaxEng.mkAdv (co ! R.Pos) (as.gerund ! p)
       } ;
 
     'BaseAction/Dir' a1 a2 =
@@ -115,7 +129,7 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
       } ;
 
     -- : Term -> Action -> Move ; -- the company raises capital
-    MAction temp pol t a = mkText (mkUtt (cl temp pol t a)) fullStopPunct ;
+    MAction temp t a = mkText (mkUtt (cl temp PPositive t a)) fullStopPunct ;
 
     TPresent = presentTense ;
     TPast = pastTense ;

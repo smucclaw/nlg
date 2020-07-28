@@ -39,7 +39,7 @@ abstract Query = {
     TDet : Determiner -> Kind -> Term ;
 
     -- Kinds, Terms and Properties
-    PNot : Property -> Property ;             -- not fixed
+    PNeg : Property -> Property ;             -- not fixed / involuntary
     KProperty : Property -> Kind -> Kind ;    -- voluntary termination
 
     -- Conjunctions

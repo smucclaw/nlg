@@ -79,7 +79,7 @@ concrete QueryEng of Query = open
       } ;
     All = table {
       Mass => table {Pos => allSg_Det ; Neg => anySg_Det} ;
-      Count => table {Pos => all_Det ; Neg => anySg_Det} ;
+      Count => table {Pos => all_Det ; Neg => anyPl_Det} ;
       Plural => table {Pos => all_Det ; Neg => anyPl_Det}
       } ;
 
@@ -99,7 +99,7 @@ concrete QueryEng of Query = open
       } ;
 
     -- : Property -> Property ;
-    PNot prop = \\_ => prop ! Neg ;
+    PNeg prop = \\_ => prop ! Neg ;
 
     -- Conjunctions
     And = table {
@@ -128,7 +128,7 @@ concrete QueryEng of Query = open
       let conj : Conj = case pol of {
             Pos => co ! Pos ;
             Neg => or_Conj } ; -- neither-nor only for verbs, negation of and and or is or for now
-      in  mkNP conj (ts ! pol) ;     -- : Conj -> ListNP -> NP ;
+      in  mkNP (co ! Pos) (ts ! pol) ;     -- : Conj -> ListNP -> NP ;
 
   -----------------------------------------------------------------
 
