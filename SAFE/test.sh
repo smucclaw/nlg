@@ -4,5 +4,11 @@
 
 #echo "If this is the first line you see, it means success!"
 
-echo "Here are the results:"
+echo "Short pieces"
 gf --run < tests/query.gfs
+
+echo ""
+echo "------"
+echo ""
+echo "Negations"
+gf --run < tests/negation.gfs
