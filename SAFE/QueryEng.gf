@@ -13,12 +13,12 @@ concrete QueryEng of Query = open
     Determiner = LinDet ;
     Conjunction = LinConj ;
     [Term] = ListLinTerm ;
+    Property = LinProp ;
+    [Property] = ListLinProp ;
 
     -- Following categories on the RHS (Text, QS etc.) come from SyntaxEng
     Move = Text ;
     Query = QS ;
-    Property = AP ;  -- Simplification: later use https://github.com/GrammaticalFramework/gf-contrib/blob/master/YAQL/YAQLFunctor.gf#L19
-    [Property] = ListAP ;
 
 
   linref
@@ -31,13 +31,13 @@ concrete QueryEng of Query = open
     MQuery q = mkText (mkUtt q) questMarkPunct ;
 
     -- : Kind -> Property -> Query ;    -- which events are dissolution events
-    QWhichProp kind prop = mkQS (mkQCl (mkIP whichPl_IDet (merge kind)) prop) ;
+    QWhichProp kind prop = mkQS (mkQCl (mkIP whichPl_IDet (merge kind)) (ap prop)) ;
 
     -- : Kind -> Term -> Query ;      -- which events are dissolution events
     QWhichTerm kind term = mkQS (mkQCl (mkIP whichPl_IDet (merge kind)) (np term)) ;
 
     -- : Term -> Property -> Query ;    -- is change of control voluntary
-    QWhetherProp term prop = mkQS (mkQCl (mkCl (np term) prop)) ;
+    QWhetherProp term prop = mkQS (mkQCl (mkCl (np term) (ap prop))) ;
 
     -- : Term -> Term -> Query ;    -- is change of control a liquidity event
     QWhetherTerm term1 term2 = mkQS (mkQCl (mkCl (np term1) (np term2))) ;
@@ -46,7 +46,7 @@ concrete QueryEng of Query = open
     MNo = no_Utt ;
 
     -- : Kind -> Property -> Move ;     -- liquidity event is voluntary
-    MDefProp kind prop = mkText (mkUtt (mkCl (defTerm kind) prop)) fullStopPunct ;
+    MDefProp kind prop = mkText (mkUtt (mkCl (defTerm kind) (ap prop))) fullStopPunct ;
 
     -- : Kind -> Term -> Move ;         -- liquidity event means A, B or C
     MDefTerm kind term = mkText (mkUtt (mkCl (defTerm kind) (mkV2 (mkV "mean")) (np term))) fullStopPunct ;
@@ -88,16 +88,18 @@ concrete QueryEng of Query = open
     TDet = term ; -- using our oper 'term', defined at the end of file
 
     -- : Property -> Kind -> Kind ;
-    KProperty prop kind = case prop.isPre of {
-      True => kind ** { -- voluntary termination
-        cn = mkCN prop kind.cn
-        } ;
-      False => kind ** { -- termination for the benefit of the Company
-        adv = cc2 kind.adv (ap2adv prop)
-        }
+    KProperty props kind = let prop : AP = ap props in
+      case prop.isPre of {
+        True => kind ** { -- voluntary termination
+          cn = mkCN prop kind.cn
+          } ;
+        False => kind ** { -- termination for the benefit of the Company
+          adv = cc2 kind.adv (ap2adv prop)
+          }
       } ;
 
-    --PNot : Property -> Property ;
+    -- : Property -> Property ;
+    PNot prop = \\_ => prop ! Neg ;
 
     -- Conjunctions
     And = table {
@@ -110,29 +112,33 @@ concrete QueryEng of Query = open
       } ;
 
     -- Lists
-    -- See the two instances of mkListAP https://www.grammaticalframework.org/lib/doc/synopsis/index.html#ListAP
-    BaseProperty = mkListAP ; -- : AP -> AP -> ListAP
-    ConsProperty = mkListAP ; -- : AP -> ListAP -> ListAP
-    ConjProperty co = mkAP (co ! Pos) ;     -- : Conj -> ListAP -> AP
+    -- The opers base and cons are defined later in this file.
+    -- The instances of mkListAP and mkListNP can be found at
+    --   https://www.grammaticalframework.org/lib/doc/synopsis/index.html#ListAP
+    --   https://www.grammaticalframework.org/lib/doc/synopsis/index.html#ListNP
+    BaseProperty = base AP ListAP mkListAP ; -- : AP -> AP -> ListAP
+    ConsProperty = cons AP ListAP mkListAP ; -- : AP -> ListAP -> ListAP
+    ConjProperty co ps = \\pol =>               -- : Conj -> ListAP -> AP
+      mkAP (co ! Pos) (ps ! pol) ; -- conjunctions don't change here, because negations can be lexical.
+                                   -- e.g. "involuntary and unjustified"
 
-    -- See the two instances of mkListNP https://www.grammaticalframework.org/lib/doc/synopsis/index.html#ListNP
-    -- Unlike in {Base,Cons}Property, now we transform t1 and t2 into NPs.
-    -- (Actually their type is already NP, but if this changes later,
-    -- we need to change only the definition of 'np', only in one place.)
-    BaseTerm t1 t2 = \\pol =>
-      mkListNP (t1 ! pol) (t2 ! pol) ; -- : NP -> NP -> ListNP
-    ConsTerm t1 ts = \\pol =>
-      mkListNP (t1 ! pol) (ts ! pol) ; -- : NP -> ListNP -> ListNP
+    BaseTerm = base NP ListNP mkListNP ; -- : NP -> NP -> ListNP
+    ConsTerm = cons NP ListNP mkListNP ; -- : NP -> ListNP -> ListNP
     ConjTerm co ts = \\pol =>
       let conj : Conj = case pol of {
             Pos => co ! Pos ;
-            Neg => or_Conj } ; -- neither-nor only for verbs, negation of and and or is or
+            Neg => or_Conj } ; -- neither-nor only for verbs, negation of and and or is or for now
       in  mkNP conj (ts ! pol) ;     -- : Conj -> ListNP -> NP ;
+
   -----------------------------------------------------------------
+
   param
     KType = Mass | Count | Plural ;
 
   oper
+    --------------------
+    -- Types for lincats
+
     DetLite : Type = {s : Str ;  n : ParamX.Number} ;
 
     LinKind : Type = {
@@ -143,7 +149,32 @@ concrete QueryEng of Query = open
     LinTerm : Type = ParamX.Polarity => NP ;
     LinConj : Type = ParamX.Polarity => Conj ;
     LinDet : Type = KType => ParamX.Polarity => DetLite ;
+    LinProp : Type = ParamX.Polarity => AP ;  -- Simplification: later use https://github.com/GrammaticalFramework/gf-contrib/blob/master/YAQL/YAQLFunctor.gf#L19
+
+    --------
+    -- Lists
     ListLinTerm : Type = ParamX.Polarity => ListNP ;
+    ListLinProp : Type = ParamX.Polarity => ListAP ;
+
+    -- This is how you do polymorphism in GF.
+    -- A bit unwieldy.
+
+    base : (A : Type) -> (ListA : Type) ->
+      (A -> A -> ListA) ->
+      (a, b : ParamX.Polarity => A) ->
+      ParamX.Polarity => ListA =
+      \_,_,mkList,a,b -> \\pol => mkList (a ! pol) (b ! pol) ;
+
+    cons : (A : Type) -> (ListA : Type) ->
+      (A -> ListA -> ListA) ->
+      (a : ParamX.Polarity => A) ->
+      (as : ParamX.Polarity => ListA) ->
+      ParamX.Polarity => ListA =
+      \_,_,mkList,a,as -> \\pol => mkList (a ! pol) (as ! pol) ;
+
+
+    ------------
+    -- Conj, Det
 
     neither7nor_DConj : Conj = mkConj "neither" "nor" singular ;
 
@@ -167,12 +198,18 @@ concrete QueryEng of Query = open
       s = []
       } ;
 
+    ----------------
+    -- Empty phrases
+
     emptyAdv : Adv = mkAdv [] ;
     emptyAP : AP = <mkAP (mkA []) : AP> ** {s = \\_ => []} ;
     emptyNP : NP = <mkNP (mkN []) : NP> ** {s = \\_ => []} ;
 
     ap2adv : AP -> Adv = \ap -> lin Adv (mkUtt ap) ;  -- RGL has no AP->Adv fun
     adv2ap : Adv -> AP = AdjectiveEng.AdvAP emptyAP ; -- RGL has no Adv->AP fun
+
+    -------------------------------
+    -- Other useful syntactic opers
 
     -- Combine Determiner and Kind into a Term
     term : LinDet -> LinKind -> LinTerm = \dets,kind ->
@@ -185,6 +222,9 @@ concrete QueryEng of Query = open
 
     -- Default use for most NPs: pick the positive version (e.g. "some car", not "any car")
     np : LinTerm -> NP = \lt -> lt ! Pos ;
+
+    -- Default use for most APs: pick the positive version (e.g. "voluntary", not "involuntary")
+    ap : LinProp -> AP = \lp -> lp ! Pos ;
 
     -- np2cn : NP -> CN = \np -> let s : Str = (mkUtt np).s in mkCN (mkN s s s s) ;
 

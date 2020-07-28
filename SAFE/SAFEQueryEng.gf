@@ -301,20 +301,26 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     PreMoney = prop "pre-money" ;
     PostMoney = prop "post-money" ;
     BonaFide = prop "bona fide" ;
-    Voluntary = prop "voluntary" ;
-    Involuntary = prop "involuntary" ;
+    Voluntary = prop "voluntary" "involuntary" ;
 
     -- : Term -> Property ; -- for the benefit of the Company's creditors
     ForBenefit t =
-      adv2ap (adv for_Prep (mkNP the_Det (mkCN benefit_N2 (np t)))) ;
+      let for_b : Adv = adv for_Prep (mkNP the_Det (mkCN benefit_N2 (np t))) ;
+          not_for_b : Adv = for_b ** ss2 "not" for_b.s ;
+      in table {
+        R.Pos => adv2ap for_b ;
+        R.Neg => adv2ap not_for_b
+      } ;
 
     -- : Action -> Property ; -- with the purpose of raising capital
     WithPurpose action =
-      adv2ap (adv with_Prep
-                  (mkNP the_Det
-                        (mkCN purpose_N2 (gerund action))
-                  )
-             ) ;
+      let purpose_of : NP = mkNP the_Det (mkCN purpose_N2 (gerund action)) ;
+          with_purpose : Adv = adv with_Prep purpose_of ;
+          without_purpose : Adv = adv without_Prep purpose_of ;
+       in table {
+        R.Pos => adv2ap with_purpose ;
+        R.Neg => adv2ap without_purpose
+      } ;
 
     -----------
     -- Kinds --
@@ -329,7 +335,7 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     LiquidityEvent = adjkind "liquidity" "event" | kind "liquidity" ;
     ChangeOfControl = ofkind "change" "control" ;
     DirectListing = adjkind "direct" "listing" ;
-    InitialPublicOffering = linkind (mkCN (prop "initial") (adjkind "public" "offering").cn) ;
+    InitialPublicOffering = linkind (mkCN (mkA "initial") (adjkind "public" "offering").cn) ;
 
     EquityFinancing = adjkind "equity" "financing" ;
     Transaction = kind "transaction" ;
@@ -350,7 +356,7 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
 
     -- : [Property] -> Kind -> Kind
     KWhetherOr props kind =
-      let prop : Adv = ap2adv (mkAP whether_or_Conj props) ;
+      let prop : Adv = ap2adv (mkAP whether_or_Conj (props ! R.Pos)) ;
       in kind ** {
         adv = cc2 kind.adv prop } ;
 
@@ -424,10 +430,19 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     linkind : CN -> LinKind = \cn -> {cn = cn ; adv = emptyAdv ; k = Count} ;
 
     adv : Prep -> NP -> Adv = SyntaxEng.mkAdv ; -- shorthand: mkAdv is imported from two modules, so it has to be qualified
-    prop : Str -> AP = \a -> mkAP (mkA a) ;
+    prop = overload {
+      prop : Str -> Str -> LinProp = \pos,neg -> table {
+        R.Pos => mkAP (mkA pos) ;
+        R.Neg => mkAP (mkA neg)
+        } ;
+      prop : Str -> LinProp = \pos -> table {
+        R.Pos => mkAP (mkA pos) ;
+        R.Neg => mkAP (mkA ("not" ++ pos))
+        }
+      } ;
     kind : Str -> LinKind = \n -> linkind (mkCN (mkN n)) ;
     adjkind : Str -> Str -> LinKind =
-      \a,n -> linkind (mkCN (prop a) (mkN n)) ;
+      \a,n -> linkind (mkCN (mkAP (mkA a)) (mkN n)) ;
     ofkind : Str -> Str -> LinKind =
       \n,p -> linkind (mkCN (mkN n) (adv part_Prep (mkNP (mkN p)))) ;
 
