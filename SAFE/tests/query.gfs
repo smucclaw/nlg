@@ -40,5 +40,13 @@ p "liquidity event means a change of control , a direct listing or an initial pu
 ps "** dissolution event means a voluntary termination of operations , a general assignment for the benefit of the Company's creditors or any other liquidation , dissolution or winding up of the Company ( excluding a liquidity event ) , whether voluntary or involuntary ."
 p "dissolution event means a voluntary termination of operations , a general assignment for the benefit of the Company's creditors or any other liquidation , dissolution or winding up of the Company ( excluding a liquidity event ) , whether voluntary or involuntary ."
 
-p "equity financing means a bona fide transaction or series of transactions with the principal purpose of raising capital , pursuant to which the Company issues and sells preferred stock at a fixed valuation , including but not limited to , a pre-money or post-money valuation ."
+ps "** equity financing means a bona fide transaction or series of transactions with the principal purpose of raising capital , pursuant to which the Company issues and sells preferred stock at a fixed valuation , including a pre-money or post-money valuation ."
+p "equity financing means a bona fide transaction or series of transactions with the principal purpose of raising capital , pursuant to which the Company issues and sells preferred stock at a fixed valuation , including a pre-money or post-money valuation , ."
 
+--(Ken Adams recommends against "pursuant to", replace with "under", "in accordance with" or "authorized by")
+
+--The Company issues and sells preferred stock (at a fixed valuation…) pursuant to
+--1. equity financing?
+--2. a bona fide transaction or series of transactions?
+--3. capital?
+--4. principal purpose of raising capital?

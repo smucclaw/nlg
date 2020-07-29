@@ -60,6 +60,7 @@ abstract SAFEQuery = Query ** {
 
     MAction : Temporality -> -- Polarity ->
       Term -> Action -> Move ; -- the company raises/raised/doesn't raise capital
+    MDefTermUnder : Kind -> Term -> Term -> Action -> Move ;
 
   ----------------
     -- Properties --

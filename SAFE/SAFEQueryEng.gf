@@ -138,6 +138,11 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     -- : Term -> Action -> Move ; -- the company raises capital
     MAction temp t a = mkText (mkUtt (cl temp PPositive t a)) fullStopPunct ;
 
+    --  : Kind -> Term -> Term -> Action -> Move ;
+    MDefTermUnder kind definition actor action =
+      MDefTerm kind (UnderWhich definition actor action) ;
+
+
     TPresent = presentTense ;
     TPast = pastTense ;
     PPositive = positivePol ;

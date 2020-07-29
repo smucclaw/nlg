@@ -24,12 +24,18 @@ p "equity financing means a bona fide transaction or series of transactions with
 
 ps "** Quantifiers"
 ps ""
+ps "** the Company sells any preferred stock ."
+p "the Company sells any preferred stock ."
+
 ps "** the Company sells all preferred stock ."
 p "the Company sells all preferred stock ."
-ps ""
 
 ps "** the Company doesn't sell any preferred stock ."
 p "the Company doesn't sell any preferred stock ."
+
+ps "** the Company doesn't sell all preferred stock ."
+p "the Company doesn't sell all preferred stock ."
+
 ps ""
 
 ps "** Indirect object"
