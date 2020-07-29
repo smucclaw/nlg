@@ -53,34 +53,34 @@ concrete QueryEng of Query = open
 
     -- Determiners
     ASg = table {
-      Mass => \\_ => emptyDet ;
-      Count => \\_ => aSg_Det ;
-      Plural => \\_ => aPl_Det
+      Mass => emptyDet ;
+      Count => aSg_Det ;
+      Plural => aPl_Det
       } ;
     APl = table {
-      Mass => \\_ => aPl_Det ; -- or emptyDet ;
-      Count => \\_ => aPl_Det ;
-      Plural => \\_ => aPl_Det
+      Mass => aPl_Det ; -- or emptyDet ;
+      Count => aPl_Det ;
+      Plural => aPl_Det
       } ;
     TheSg = table {
-      Mass => \\_ => theSg_Det ;
-      Count => \\_ => theSg_Det ;
-      Plural => \\_ => thePl_Det
+      Mass => theSg_Det ;
+      Count => theSg_Det ;
+      Plural => thePl_Det
       } ;
     ThePl = table {
-      Mass => \\_ => thePl_Det ;
-      Count => \\_ => thePl_Det ;
-      Plural => \\_ => thePl_Det
+      Mass => thePl_Det ;
+      Count => thePl_Det ;
+      Plural => thePl_Det
       } ;
     Any = table {
-      Mass => \\_ => anySg_Det ;
-      Count => \\_ => anySg_Det ;
-      Plural => \\_ => anyPl_Det
+      Mass => anySg_Det ;
+      Count => anySg_Det ;
+      Plural => anyPl_Det
       } ;
     All = table {
-      Mass => table {Pos => allSg_Det ; Neg => anySg_Det} ;
-      Count => table {Pos => all_Det ; Neg => anyPl_Det} ;
-      Plural => table {Pos => all_Det ; Neg => anyPl_Det}
+      Mass => allSg_Det ; --table {Pos => allSg_Det ; Neg => anySg_Det} ;
+      Count => all_Det ; --table {Pos => all_Det ; Neg => anyPl_Det} ;
+      Plural => all_Det --table {Pos => all_Det ; Neg => anyPl_Det}
       } ;
 
     -- Kinds, Terms and Properties
@@ -99,7 +99,10 @@ concrete QueryEng of Query = open
       } ;
 
     -- : Property -> Property ;
-    PNeg prop = \\_ => prop ! Neg ;
+    PNeg prop = table {
+      --Neg => prop ! Pos
+      _ => prop ! Neg
+      } ;
 
     -- Conjunctions
     And = table {
@@ -119,16 +122,19 @@ concrete QueryEng of Query = open
     BaseProperty = base AP ListAP mkListAP ; -- : AP -> AP -> ListAP
     ConsProperty = cons AP ListAP mkListAP ; -- : AP -> ListAP -> ListAP
     ConjProperty co ps = \\pol =>               -- : Conj -> ListAP -> AP
-      mkAP (co ! Pos) (ps ! pol) ; -- conjunctions don't change here, because negations can be lexical.
+      mkAP (co ! Pos) (ps ! pol) ; -- conjunctions don't change, because negations can be lexical.
                                    -- e.g. "involuntary and unjustified"
 
-    BaseTerm = base NP ListNP mkListNP ; -- : NP -> NP -> ListNP
-    ConsTerm = cons NP ListNP mkListNP ; -- : NP -> ListNP -> ListNP
-    ConjTerm co ts = \\pol =>
-      let conj : Conj = case pol of {
-            Pos => co ! Pos ;
-            Neg => or_Conj } ; -- neither-nor only for verbs, negation of and and or is or for now
-      in  mkNP (co ! Pos) (ts ! pol) ;     -- : Conj -> ListNP -> NP ;
+    BaseTerm = mkListNP ;
+    ConsTerm = mkListNP ;
+    ConjTerm co ts = mkNP (co ! Pos) ts ;
+    -- BaseTerm = base NP ListNP mkListNP ; -- : NP -> NP -> ListNP
+    -- ConsTerm = cons NP ListNP mkListNP ; -- : NP -> ListNP -> ListNP
+    -- ConjTerm co ts = \\pol =>
+    --   let conj : Conj = case pol of {
+    --         Pos => co ! Pos ;
+    --         Neg => or_Conj } ; -- neither-nor only for verbs, negation of and and or is or for now
+    --   in  mkNP (co ! Pos) (ts ! pol) ;     -- : Conj -> ListNP -> NP ;
 
   -----------------------------------------------------------------
 
@@ -146,14 +152,14 @@ concrete QueryEng of Query = open
       adv : Adv ;
       k : KType
       } ;
-    LinTerm : Type = ParamX.Polarity => NP ;
+    LinTerm : Type = NP ; -- ParamX.Polarity => NP ;
     LinConj : Type = ParamX.Polarity => Conj ;
-    LinDet : Type = KType => ParamX.Polarity => DetLite ;
+    LinDet : Type = KType => DetLite ; -- ParamX.Polarity => DetLite ;
     LinProp : Type = ParamX.Polarity => AP ;  -- Simplification: later use https://github.com/GrammaticalFramework/gf-contrib/blob/master/YAQL/YAQLFunctor.gf#L19
 
     --------
     -- Lists
-    ListLinTerm : Type = ParamX.Polarity => ListNP ;
+    ListLinTerm : Type = ListNP ;
     ListLinProp : Type = ParamX.Polarity => ListAP ;
 
     -- This is how you do polymorphism in GF.
@@ -213,7 +219,7 @@ concrete QueryEng of Query = open
 
     -- Combine Determiner and Kind into a Term
     term : LinDet -> LinKind -> LinTerm = \dets,kind ->
-      \\pol => detCNLite (dets ! kind.k ! pol) (merge kind) ;
+      detCNLite (dets ! kind.k) (merge kind) ;
 
     defTerm : LinKind -> NP = \k -> mkNP (merge k) ;
 
@@ -221,7 +227,8 @@ concrete QueryEng of Query = open
     merge : LinKind -> CN = \kind -> mkCN kind.cn kind.adv ;
 
     -- Default use for most NPs: pick the positive version (e.g. "some car", not "any car")
-    np : LinTerm -> NP = \lt -> lt ! Pos ;
+    --np : LinTerm -> NP = \lt -> lt ! Pos ;
+    np : LinTerm -> NP = id NP ;
 
     -- Default use for most APs: pick the positive version (e.g. "voluntary", not "involuntary")
     ap : LinProp -> AP = \lp -> lp ! Pos ;

@@ -131,6 +131,12 @@ abstract SAFEQuery = Query ** {
       Kind -> Term ->
       Term ;
 
+    UnderWhich
+      : Term -> -- the contract, (under which)
+      Term ->   -- the Company
+      Action -> -- sells stock
+      Term ;
+
     Series,   -- a series of transactions
     AnyOther  -- any other liquidation, dissolution or winding up
       : Determiner ;
