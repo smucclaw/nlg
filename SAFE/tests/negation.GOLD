@@ -1,0 +1,74 @@
+
+** Adjective negation
+
+** change of control is involuntary .
+MDefProp ChangeOfControl (PNeg Voluntary)
+
+
+** equity financing means a bona fide transaction or series of transactions with the principal purpose of raising capital .
+MDefTerm EquityFinancing (ConjTerm Or (BaseTerm (TDet ASg (KProperty BonaFide Transaction)) (TDet Series (KProperty (WithPurpose (AComplDir Raise (TDet ASg Capital))) Transaction))))
+
+** equity financing means a bona fide transaction or series of transactions with the principal purpose of NOT raising capital .
+MDefTerm EquityFinancing (ConjTerm Or (BaseTerm (TDet ASg (KProperty BonaFide Transaction)) (TDet Series (KProperty (WithPurpose (ANeg (AComplDir Raise (TDet ASg Capital)))) Transaction))))
+
+** equity financing means a bona fide transaction or series of transactions WITHOUT the principal purpose of raising capital .
+MDefTerm EquityFinancing (ConjTerm Or (BaseTerm (TDet ASg (KProperty BonaFide Transaction)) (TDet Series (KProperty (PNeg (WithPurpose (AComplDir Raise (TDet ASg Capital)))) Transaction))))
+
+** equity financing means a bona fide transaction or series of transactions WITHOUT the principal purpose of NOT raising capital .
+MDefTerm EquityFinancing (ConjTerm Or (BaseTerm (TDet ASg (KProperty BonaFide Transaction)) (TDet Series (KProperty (PNeg (WithPurpose (ANeg (AComplDir Raise (TDet ASg Capital))))) Transaction))))
+
+** Quantifiers
+
+** the Company sells any preferred stock .
+MAction TPresent Company (AComplDir Sell (TDet Any PreferredStock))
+
+** the Company sells all preferred stock .
+MAction TPresent Company (AComplDir Sell (TDet All PreferredStock))
+
+** the Company doesn't sell any preferred stock .
+MAction TPresent Company (ANeg (AComplDir Sell (TDet Any PreferredStock)))
+
+** the Company doesn't sell all preferred stock .
+MAction TPresent Company (ANeg (AComplDir Sell (TDet All PreferredStock)))
+
+
+** Indirect object
+
+** the Company doesn't sell preferred stock , whether at a fixed valuation or without a fixed valuation .
+MAction TPresent Company (ANeg (AComplDir (ASlashIndir SellAt (TDet ASg (KProperty Fixed Valuation))) (TDet ASg PreferredStock)))
+MAction TPresent Company (ANeg (AComplIndir (ASlashDir SellAt (TDet ASg PreferredStock)) (TDet ASg (KProperty Fixed Valuation))))
+
+
+** Multiple objects
+
+** the Company doesn't sell preferred stock and capital .
+MAction TPresent Company (ANeg (AComplDir Sell (ConjTerm And (BaseTerm (TDet ASg PreferredStock) (TDet ASg Capital)))))
+
+** the Company doesn't sell preferred stock and doesn't sell capital .
+MAction TPresent Company (ANeg (ConjAction And (BaseAction (AComplDir Sell (TDet ASg PreferredStock)) (AComplDir Sell (TDet ASg Capital)))))
+MAction TPresent Company (ConjAction And (BaseAction (ANeg (AComplDir Sell (TDet ASg PreferredStock))) (ANeg (AComplDir Sell (TDet ASg Capital)))))
+
+** the Company doesn't sell preferred stock and sells capital .
+MAction TPresent Company (ConjAction And (BaseAction (ANeg (AComplDir Sell (TDet ASg PreferredStock))) (AComplDir Sell (TDet ASg Capital))))
+
+** the Company sells preferred stock and doesn't sell capital .
+MAction TPresent Company (ConjAction And (BaseAction (AComplDir Sell (TDet ASg PreferredStock)) (ANeg (AComplDir Sell (TDet ASg Capital)))))
+
+** the Company sells neither preferred stock nor capital .
+MAction TPresent Company (AComplNoneDir Sell (BaseTerm (TDet ASg PreferredStock) (TDet ASg Capital)))
+
+** Multiple predicates
+
+** the Company sells and issues preferred stock .
+MAction TPresent Company (AComplDir (ConjSlashDir And ('BaseAction/Dir' Sell Issue)) (TDet ASg PreferredStock))
+
+
+** the Company neither sells nor issues preferred stock .
+The parser failed at token 3: "neither"
+
+** the Company doesn't sell and issue preferred stock, whether at a fixed valuation or without a fixed valuation
+The parser failed at token 6: "issue"
+
+** the Company neither sells nor issues preferred stock , whether at a fixed valuation or without a fixed valuation .
+The parser failed at token 3: "neither"
+

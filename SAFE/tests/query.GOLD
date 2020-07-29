@@ -1,15 +1,47 @@
-MDefTerm (TMass LiquidityEvent) (TOr (ConsTerm (TSgIndef ChangeOfControl) (BaseTerm (TSgIndef DirectListing) (TSgIndef InitialPublicOffering))))
+** a change of control , a direct listing or an initial public offering 
+ConjTerm Or (ConsTerm (TDet ASg ChangeOfControl) (BaseTerm (TDet ASg DirectListing) (TDet ASg InitialPublicOffering)))
 
-MDefTerm (TMass EquityFinancing) (TOr (BaseTerm (TSgIndef (KProperty BonaFide Transaction)) (TSeries (KProperty (WithPurpose (Raise (TMass Capital))) Transaction))))
+** equity financing means a bona fide transaction or series of transactions with the principal purpose of raising capital .
+MDefTerm EquityFinancing (ConjTerm Or (BaseTerm (TDet ASg (KProperty BonaFide Transaction)) (TDet Series (KProperty (WithPurpose (AComplDir Raise (TDet ASg Capital))) Transaction))))
 
-MAction Company (SellAt (TMass PreferredStock) (TIncluding (\_1 -> TSgIndef ?4) (KProperty Fixed Valuation) (TSgIndef (KProperty (POr (BaseProperty PreMoney PostMoney)) Valuation))))
+** the Company sells preferred stock at a fixed valuation , including but not limited to , a pre-money or post-money valuation .
+MAction TPresent Company (AComplDir (ASlashIndir SellAt (TIncluding ASg (KProperty Fixed Valuation) (TDet ASg (KProperty (ConjProperty Or (BaseProperty PreMoney PostMoney)) Valuation)))) (TDet ASg PreferredStock))
+MAction TPresent Company (AComplIndir (ASlashDir SellAt (TDet ASg PreferredStock)) (TIncluding ASg (KProperty Fixed Valuation) (TDet ASg (KProperty (ConjProperty Or (BaseProperty PreMoney PostMoney)) Valuation))))
 
-TIncluding (\_1 -> TSgIndef ?1) Valuation (TSgIndef (KProperty (POr (BaseProperty PreMoney PostMoney)) Valuation))
+** a valuation , including a pre-money or post-money valuation
+TIncluding ASg Valuation (TDet ASg (KProperty (ConjProperty Or (BaseProperty PreMoney PostMoney)) Valuation))
 
-MAction Company (TAAnd (BaseTA (\_1 -> Sell ?2) (\_1 -> Issue ?4)) (TMass PreferredStock))
+** the Company sells preferred stock and issues capital .
+MAction TPresent Company (ConjAction And (BaseAction (AComplDir Sell (TDet ASg PreferredStock)) (AComplDir Issue (TDet ASg Capital))))
 
-MAction Company (TAAnd (BaseTA (\_1 -> Sell ?2) (\_1 -> IssueAt ?4 (TIncluding (\_1 -> TSgIndef ?5) (KProperty Fixed Valuation) (TSgIndef (KProperty (POr (BaseProperty PreMoney PostMoney)) Valuation))))) (TMass PreferredStock))
+** the Company sells and issues preferred stock .
+MAction TPresent Company (AComplDir (ConjSlashDir And ('BaseAction/Dir' Sell Issue)) (TDet ASg PreferredStock))
 
-the Company sells and issues preferred stock at a fixed valuation , including a pre-money or post-money valuation .
+** the Company sells and issues preferred stock at a fixed valuation .
+MAction TPresent Company (AComplDir (ASlashIndir (ConjSlashDirIndir And ('BaseAction/Dir/Indir' SellAt IssueAt)) (TDet ASg (KProperty Fixed Valuation))) (TDet ASg PreferredStock))
+MAction TPresent Company (AComplIndir (ASlashDir (ConjSlashDirIndir And ('BaseAction/Dir/Indir' SellAt IssueAt)) (TDet ASg PreferredStock)) (TDet ASg (KProperty Fixed Valuation)))
 
-dissolution event means a voluntary termination of operations , a general assignment for the benefit of the Company's creditors or any other liquidation , dissolution or winding up of the Company ( excluding a liquidity event ) , whether voluntary or involuntary .
+** capital , pursuant to which the Company sells preferred stock at a fixed valuation
+UnderWhich (TDet ASg Capital) Company (AComplDir (ASlashIndir SellAt (TDet ASg (KProperty Fixed Valuation))) (TDet ASg PreferredStock))
+UnderWhich (TDet ASg Capital) Company (AComplIndir (ASlashDir SellAt (TDet ASg PreferredStock)) (TDet ASg (KProperty Fixed Valuation)))
+
+** the Company sells and issues preferred stock at a fixed valuation , including but not limited to , a pre-money or post-money valuation .
+MAction TPresent Company (AComplDir (ASlashIndir (ConjSlashDirIndir And ('BaseAction/Dir/Indir' SellAt IssueAt)) (TIncluding ASg (KProperty Fixed Valuation) (TDet ASg (KProperty (ConjProperty Or (BaseProperty PreMoney PostMoney)) Valuation)))) (TDet ASg PreferredStock))
+MAction TPresent Company (AComplIndir (ASlashDir (ConjSlashDirIndir And ('BaseAction/Dir/Indir' SellAt IssueAt)) (TDet ASg PreferredStock)) (TIncluding ASg (KProperty Fixed Valuation) (TDet ASg (KProperty (ConjProperty Or (BaseProperty PreMoney PostMoney)) Valuation))))
+
+** liquidity event means a change of control , a direct listing or an initial public offering .
+MDefTerm LiquidityEvent (ConjTerm Or (ConsTerm (TDet ASg ChangeOfControl) (BaseTerm (TDet ASg DirectListing) (TDet ASg InitialPublicOffering))))
+
+** dissolution event means a voluntary termination of operations , a general assignment for the benefit of the Company's creditors or any other liquidation , dissolution or winding up of the Company ( excluding a liquidity event ) , whether voluntary or involuntary .
+MDefTerm DissolutionEvent (ConjTerm Or (ConsTerm (TDet ASg (KProperty Voluntary Termination)) (BaseTerm (TDet ASg (KProperty (ForBenefit (Creditors Company)) GeneralAssignment)) (TExcluding AnyOther (KWhetherOr (BaseProperty Voluntary (PNeg Voluntary)) (ComplKind (ConjSlashTerm Or ('ConsKind/Term' Liquidation ('BaseKind/Term' Dissolution WindingUp))) Company)) (TDet ASg LiquidityEvent)))))
+
+** equity financing means a bona fide transaction or series of transactions with the principal purpose of raising capital , pursuant to which the Company issues and sells preferred stock at a fixed valuation , including a pre-money or post-money valuation .
+MDefTerm EquityFinancing (ConjTerm Or (BaseTerm (TDet ASg (KProperty BonaFide Transaction)) (TDet Series (KProperty (WithPurpose (AComplDir Raise (UnderWhich (TDet ASg Capital) Company (AComplDir (ASlashIndir (ConjSlashDirIndir And ('BaseAction/Dir/Indir' IssueAt SellAt)) (TIncluding ASg (KProperty Fixed Valuation) (TDet ASg (KProperty (ConjProperty Or (BaseProperty PreMoney PostMoney)) Valuation)))) (TDet ASg PreferredStock))))) Transaction))))
+MDefTerm EquityFinancing (ConjTerm Or (BaseTerm (TDet ASg (KProperty BonaFide Transaction)) (TDet Series (KProperty (WithPurpose (AComplDir Raise (UnderWhich (TDet ASg Capital) Company (AComplIndir (ASlashDir (ConjSlashDirIndir And ('BaseAction/Dir/Indir' IssueAt SellAt)) (TDet ASg PreferredStock)) (TIncluding ASg (KProperty Fixed Valuation) (TDet ASg (KProperty (ConjProperty Or (BaseProperty PreMoney PostMoney)) Valuation))))))) Transaction))))
+MDefTerm EquityFinancing (ConjTerm Or (BaseTerm (TDet ASg (KProperty BonaFide Transaction)) (UnderWhich (TDet Series (KProperty (WithPurpose (AComplDir Raise (TDet ASg Capital))) Transaction)) Company (AComplDir (ASlashIndir (ConjSlashDirIndir And ('BaseAction/Dir/Indir' IssueAt SellAt)) (TIncluding ASg (KProperty Fixed Valuation) (TDet ASg (KProperty (ConjProperty Or (BaseProperty PreMoney PostMoney)) Valuation)))) (TDet ASg PreferredStock)))))
+MDefTerm EquityFinancing (ConjTerm Or (BaseTerm (TDet ASg (KProperty BonaFide Transaction)) (UnderWhich (TDet Series (KProperty (WithPurpose (AComplDir Raise (TDet ASg Capital))) Transaction)) Company (AComplIndir (ASlashDir (ConjSlashDirIndir And ('BaseAction/Dir/Indir' IssueAt SellAt)) (TDet ASg PreferredStock)) (TIncluding ASg (KProperty Fixed Valuation) (TDet ASg (KProperty (ConjProperty Or (BaseProperty PreMoney PostMoney)) Valuation)))))))
+MDefTerm EquityFinancing (UnderWhich (ConjTerm Or (BaseTerm (TDet ASg (KProperty BonaFide Transaction)) (TDet Series (KProperty (WithPurpose (AComplDir Raise (TDet ASg Capital))) Transaction)))) Company (AComplDir (ASlashIndir (ConjSlashDirIndir And ('BaseAction/Dir/Indir' IssueAt SellAt)) (TIncluding ASg (KProperty Fixed Valuation) (TDet ASg (KProperty (ConjProperty Or (BaseProperty PreMoney PostMoney)) Valuation)))) (TDet ASg PreferredStock)))
+MDefTerm EquityFinancing (UnderWhich (ConjTerm Or (BaseTerm (TDet ASg (KProperty BonaFide Transaction)) (TDet Series (KProperty (WithPurpose (AComplDir Raise (TDet ASg Capital))) Transaction)))) Company (AComplIndir (ASlashDir (ConjSlashDirIndir And ('BaseAction/Dir/Indir' IssueAt SellAt)) (TDet ASg PreferredStock)) (TIncluding ASg (KProperty Fixed Valuation) (TDet ASg (KProperty (ConjProperty Or (BaseProperty PreMoney PostMoney)) Valuation)))))
+MDefTermUnder EquityFinancing (ConjTerm Or (BaseTerm (TDet ASg (KProperty BonaFide Transaction)) (TDet Series (KProperty (WithPurpose (AComplDir Raise (TDet ASg Capital))) Transaction)))) Company (AComplDir (ASlashIndir (ConjSlashDirIndir And ('BaseAction/Dir/Indir' IssueAt SellAt)) (TIncluding ASg (KProperty Fixed Valuation) (TDet ASg (KProperty (ConjProperty Or (BaseProperty PreMoney PostMoney)) Valuation)))) (TDet ASg PreferredStock))
+MDefTermUnder EquityFinancing (ConjTerm Or (BaseTerm (TDet ASg (KProperty BonaFide Transaction)) (TDet Series (KProperty (WithPurpose (AComplDir Raise (TDet ASg Capital))) Transaction)))) Company (AComplIndir (ASlashDir (ConjSlashDirIndir And ('BaseAction/Dir/Indir' IssueAt SellAt)) (TDet ASg PreferredStock)) (TIncluding ASg (KProperty Fixed Valuation) (TDet ASg (KProperty (ConjProperty Or (BaseProperty PreMoney PostMoney)) Valuation))))
+

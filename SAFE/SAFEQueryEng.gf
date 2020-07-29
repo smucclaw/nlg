@@ -52,30 +52,37 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     -- Negations
     -- : Action -> Action ;        -- doesn't sell X / doesn't sell X and Y
     ANeg action = action ** {
-      s = \\t,p => action.s ! t ! negativePol.p ;
-      gerund = \\p => action.gerund ! negativePol.p
+      s = \\t,p => case p of {
+        --R.CNeg _ => action.s ! t ! R.CPos ; -- double negation = positive
+        _ => action.s ! t ! negativePol.p
+        } ;
+      gerund = table {
+        --R.Neg => action.gerund ! R.Pos ; -- double negation = positive
+        _ => action.gerund ! R.Neg
+        }
       } ;
     -- : 'Action/Dir' -> [Term] -> Action ; -- sells neither X, Y nor Z
-    AComplNoneDir v2 objs =
-      let none_of : NP = mkNP neither7nor_DConj (objs ! R.Pos) ;
-       in complDir v2 (\\_ => none_of) ;
+    AComplNoneDir v2 obj =
+      let none_of : NP = mkNP neither7nor_DConj obj ;
+       in complDir v2 none_of ;
 
     --  AComplNoneIndir : 'Action/Indir' -> [Term] -> Action ; -- sells (X) neither to B nor to B
 
 
     -- Conjunctions
     BaseAction a1 a2 = {
-      s = \\t,p => E.BaseVPS (a1.s ! t ! p) (a2.s ! t ! p) ; -- "doesn't sell and issue"
-      gerund = \\p => mkListAdv (a1.gerund ! p) (a2.gerund ! p)
+      s = \\t,p => E.BaseVPS (a1.s ! t ! p) (a2.s ! t ! p) ; -- doesn't sell X and doesn't issue Y
+      gerund = \\p => mkListAdv (a1.gerund ! p) (a2.gerund ! p) -- not selling X and not issuing Y
       } ;
     ConsAction a as = {
       s = \\t,p => E.ConsVPS (a.s ! t ! p) (as.s ! t ! p) ;
       gerund = \\p => mkListAdv (a.gerund ! p) (as.gerund ! p)
       } ;
     ConjAction co as = {
-      s = \\t,p =>  let conj : Conj = co ! cpol2pol p in E.ConjVPS (co ! R.Pos) (as.s ! t ! p) ;
-      gerund = \\p => let conj : Conj = co ! cpol2pol p in
-        SyntaxEng.mkAdv (co ! R.Pos) (as.gerund ! p)
+      s = \\t,p =>
+        E.ConjVPS co (as.s ! t ! p) ;
+      gerund = \\p =>
+        SyntaxEng.mkAdv co (as.gerund ! p)
       } ;
 
     'BaseAction/Dir' a1 a2 =
@@ -131,6 +138,11 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     -- : Term -> Action -> Move ; -- the company raises capital
     MAction temp t a = mkText (mkUtt (cl temp PPositive t a)) fullStopPunct ;
 
+    --  : Kind -> Term -> Term -> Action -> Move ;
+    MDefTermUnder kind definition actor action =
+      MDefTerm kind (UnderWhich definition actor action) ;
+
+
     TPresent = presentTense ;
     TPast = pastTense ;
     PPositive = positivePol ;
@@ -139,12 +151,12 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
   oper
     LinAction : Type = {
       s : R.Tense => R.CPolarity => E.VPS ;
-      gerund : R.CPolarity => Adv ;
+      gerund : R.Polarity => Adv ;
       } ;
 
     ListLinAction : Type = {
       s : R.Tense => R.CPolarity => E.ListVPS ;
-      gerund : R.CPolarity => [Adv] ;
+      gerund : R.Polarity => [Adv] ;
       } ;
 
     linAction : LinAction -> Str = \l ->
@@ -155,14 +167,19 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
           pol : Pol = lin Pol {s=[] ; p=p} ;
        in E.MkVPS (mkTemp tense simultaneousAnt) pol ;
 
-    emptyTerm : LinTerm = \\_ => emptyNP ;
+    emptyTerm : LinTerm = emptyNP ;
     ----------------------
     -- Slash categories --
     ----------------------
 
     mkGerS : V2 -> LinAction = \v2 -> {
       s = \\t,p => mkVPS t p (mkVP <v2:V2> emptyNP) ;
-      gerund = \\p => E.GerundAdv (mkVP <v2:V2> emptyNP) ; -- TODO proper treatment of polarity
+      gerund =
+        let posAdv : Adv = E.GerundAdv (mkVP <v2:V2> emptyNP) ;
+            negAdv : Adv = posAdv ** {s = "not" ++ posAdv.s}
+        in table {
+          R.Pos => posAdv ;
+          R.Neg => negAdv }
       } ;
 
     -- /Dir
@@ -182,8 +199,8 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
                           (applyPrepPol vps.dir do ! p)
                           (vps.indir ! p) ;
       gerund = \\p => complGer (vps.gerund ! p)
-                            (applyPrepPol vps.dir do ! p)
-                            (vps.indir ! p) ;
+                            (applyPrepPol vps.dir do ! pol2cpol p)
+                            (vps.indir ! pol2cpol p) ;
       } ;
 
     -- /Indir
@@ -203,8 +220,8 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
                           (vps.dir ! p)
                           (applyPrepPol vps.indir io ! p) ;
       gerund = \\p => complGer (vps.gerund ! p)
-                            (vps.dir ! p)
-                            (applyPrepPol vps.indir io ! p)
+                            (vps.dir ! pol2cpol p)
+                            (applyPrepPol vps.indir io ! pol2cpol p)
       } ;
 
 
@@ -250,7 +267,7 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
       } ;
 
     applyPrepPol : PrepPol -> LinTerm -> (R.CPolarity=>Adv) = \pp,term -> \\pol =>
-      let np : NP = term ! cpol2pol pol ;
+      let np : NP = term ; -- ! cpol2pol pol ;
           npacc : Str = np.s ! R.NPAcc ;
           prep : PrepPlus = pp ! pol
       in lin Adv {
@@ -298,12 +315,17 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     -- I need to use the s fields of those values, so that every argument contributes to the linearization.
     -- See https://inariksit.github.io/gf/2018/08/28/gf-gotchas.html#metavariables-or-those-question-marks-that-appear-when-parsing
 
-    gerund : LinAction -> NP = \pred ->
-      let s : Str = (pred.gerund ! R.CPos).s in mkNP (mkN s s s s) ;
+    gerund : LinAction -> R.Polarity=>NP = \pred -> \\pol =>
+      let s : Str = (pred.gerund ! pol).s in mkNP (mkN s s s s) ;
 
     cpol2pol : R.CPolarity -> R.Polarity = \p -> case p of {
       R.CPos => R.Pos ;
       R.CNeg _ => R.Neg
+      } ;
+
+    pol2cpol : R.Polarity -> R.CPolarity = \p -> case p of {
+      R.Pos => R.CPos ;
+      R.Neg => R.CNeg True
       } ;
 
   lin
@@ -328,13 +350,12 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
 
     -- : Action -> Property ; -- with the purpose of raising capital
     WithPurpose action =
-      let purpose_of : NP = mkNP the_Det (mkCN purpose_N2 (gerund action)) ;
-          with_purpose : Adv = adv with_Prep purpose_of ;
-          without_purpose : Adv = adv without_Prep purpose_of ;
+      let purpose_of_NP : NP = mkNP the_Det (mkCN purpose_N2 (gerund action ! R.Pos)) ;
        in table {
-        R.Pos => adv2ap with_purpose ;
-        R.Neg => adv2ap without_purpose
+         R.Pos => adv2ap (adv with_Prep purpose_of_NP) ;
+         R.Neg => adv2ap (adv without_Prep purpose_of_NP)
       } ;
+
 
     -----------
     -- Kinds --
@@ -376,16 +397,17 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
 
     'BaseKind/Term' = C.BaseCN ;
     'ConsKind/Term' = C.ConsCN ;
-    ConjSlashTerm co = C.ConjCN (co ! R.Pos) ;
+    ConjSlashTerm = C.ConjCN ;
 
     -----------
     -- Terms --
     -----------
     -- : Term
-    Company = \\_ => mkNP theSg_Det (mkN "Company") ;
+    Company = --\\_ =>
+      mkNP theSg_Det (mkN "Company") ;
 
     -- : Term -> Term ;
-    Creditors t = \\_ =>   -- the company's creditors
+    Creditors t = --\\_ =>   -- the company's creditors
       mkNP (mkDet (ExtendEng.GenNP (np t)) pluralNum) creditor_N ;
 
     -- : Determiner -> Kind -> Term -> Term ;
@@ -404,6 +426,14 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
             } ; -- Potential postmodifier is in valuation's adv field
       in term the valuation_incl ;
 
+    -- : Term -> Term -> Action -> Term ;
+    UnderWhich contract company sells_stock =
+      let under : Str = "pursuant to" ;
+          dummyRS : RS = mkRS (mkRCl (mkCl (mkN "dummy"))) ; -- to get all fields in RS and not touch RGL internals. TODO: eventually add this construction to Extend.
+          s : S = cl presentTense positivePol company sells_stock ;
+          rs : RS = dummyRS ** {s = \\agr => under ++ "which" ++ s.s} ;
+       in mkNP contract rs ;
+
     AnyOther = any_other_Det ;
     Series = series_Det ;
 
@@ -411,8 +441,8 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     -------------
     -- Lexicon --
     -------------
-    any_other_Det : LinDet = \\_,_ => a_Det ** {s = "any other"} ;
-    series_Det : LinDet = \\_,_ => aPl_Det ** {s = "series of"} ;
+    any_other_Det : LinDet = \\_ => a_Det ** {s = "any other"} ;
+    series_Det : LinDet = \\_ => aPl_Det ** {s = "series of"} ;
 
     raise_V2 : V2 = mkV2 (mkV "raise") ;
     sell_V2 : V2 = mkV2 (mkV "sell") ;

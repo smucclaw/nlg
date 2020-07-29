@@ -60,6 +60,7 @@ abstract SAFEQuery = Query ** {
 
     MAction : Temporality -> -- Polarity ->
       Term -> Action -> Move ; -- the company raises/raised/doesn't raise capital
+    MDefTermUnder : Kind -> Term -> Term -> Action -> Move ;
 
   ----------------
     -- Properties --
@@ -129,6 +130,12 @@ abstract SAFEQuery = Query ** {
     TIncluding  -- fixed valuation, including a pre-money or post-money valuation
       : Determiner ->
       Kind -> Term ->
+      Term ;
+
+    UnderWhich
+      : Term -> -- the contract, (under which)
+      Term ->   -- the Company
+      Action -> -- sells stock
       Term ;
 
     Series,   -- a series of transactions
