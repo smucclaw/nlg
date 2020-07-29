@@ -53,11 +53,11 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     -- : Action -> Action ;        -- doesn't sell X / doesn't sell X and Y
     ANeg action = action ** {
       s = \\t,p => case p of {
-        --R.CNeg _ => action.s ! t ! R.CPos ;
+        --R.CNeg _ => action.s ! t ! R.CPos ; -- double negation = positive
         _ => action.s ! t ! negativePol.p
         } ;
       gerund = table {
-        --R.Neg => action.gerund ! R.Pos ;
+        --R.Neg => action.gerund ! R.Pos ; -- double negation = positive
         _ => action.gerund ! R.Neg
         }
       } ;
@@ -79,10 +79,10 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
       gerund = \\p => mkListAdv (a.gerund ! p) (as.gerund ! p)
       } ;
     ConjAction co as = {
-      s = \\t,p => -- let conj : Conj = co ! cpol2pol p in
-        E.ConjVPS (co ! R.Pos) (as.s ! t ! p) ;
-      gerund = \\p => --let conj : Conj = co ! p in
-        SyntaxEng.mkAdv (co ! R.Pos) (as.gerund ! p)
+      s = \\t,p =>
+        E.ConjVPS co (as.s ! t ! p) ;
+      gerund = \\p =>
+        SyntaxEng.mkAdv co (as.gerund ! p)
       } ;
 
     'BaseAction/Dir' a1 a2 =
@@ -162,8 +162,7 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
           pol : Pol = lin Pol {s=[] ; p=p} ;
        in E.MkVPS (mkTemp tense simultaneousAnt) pol ;
 
-    emptyTerm : LinTerm = -- \\_ =>
-      emptyNP ;
+    emptyTerm : LinTerm = emptyNP ;
     ----------------------
     -- Slash categories --
     ----------------------
@@ -393,7 +392,7 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
 
     'BaseKind/Term' = C.BaseCN ;
     'ConsKind/Term' = C.ConsCN ;
-    ConjSlashTerm co = C.ConjCN (co ! R.Pos) ;
+    ConjSlashTerm = C.ConjCN ;
 
     -----------
     -- Terms --

@@ -78,9 +78,9 @@ concrete QueryEng of Query = open
       Plural => anyPl_Det
       } ;
     All = table {
-      Mass => allSg_Det ; --table {Pos => allSg_Det ; Neg => anySg_Det} ;
-      Count => all_Det ; --table {Pos => all_Det ; Neg => anyPl_Det} ;
-      Plural => all_Det --table {Pos => all_Det ; Neg => anyPl_Det}
+      Mass => allSg_Det ;
+      Count => all_Det ;
+      Plural => all_Det
       } ;
 
     -- Kinds, Terms and Properties
@@ -100,41 +100,29 @@ concrete QueryEng of Query = open
 
     -- : Property -> Property ;
     PNeg prop = table {
-      --Neg => prop ! Pos
+      --Neg => prop ! Pos  -- double negation = positive
       _ => prop ! Neg
       } ;
 
     -- Conjunctions
-    And = table {
-      Pos => and_Conj ;
-      Neg => neither7nor_DConj
-      } ;
-    Or = table {
-      Pos => or_Conj ;
-      Neg => neither7nor_DConj
-      } ;
+    And = and_Conj ;
+    Or = or_Conj ;
 
     -- Lists
     -- The opers base and cons are defined later in this file.
-    -- The instances of mkListAP and mkListNP can be found at
+    -- The instances of mkListAP can be found at
     --   https://www.grammaticalframework.org/lib/doc/synopsis/index.html#ListAP
-    --   https://www.grammaticalframework.org/lib/doc/synopsis/index.html#ListNP
     BaseProperty = base AP ListAP mkListAP ; -- : AP -> AP -> ListAP
     ConsProperty = cons AP ListAP mkListAP ; -- : AP -> ListAP -> ListAP
-    ConjProperty co ps = \\pol =>               -- : Conj -> ListAP -> AP
-      mkAP (co ! Pos) (ps ! pol) ; -- conjunctions don't change, because negations can be lexical.
-                                   -- e.g. "involuntary and unjustified"
+    ConjProperty co ps = \\pol =>            -- : Conj -> ListAP -> AP
+      mkAP co (ps ! pol) ; -- conjunctions don't change, because negations can be lexical.
+                           -- e.g. "involuntary and unjustified"
 
-    BaseTerm = mkListNP ;
-    ConsTerm = mkListNP ;
-    ConjTerm co ts = mkNP (co ! Pos) ts ;
-    -- BaseTerm = base NP ListNP mkListNP ; -- : NP -> NP -> ListNP
-    -- ConsTerm = cons NP ListNP mkListNP ; -- : NP -> ListNP -> ListNP
-    -- ConjTerm co ts = \\pol =>
-    --   let conj : Conj = case pol of {
-    --         Pos => co ! Pos ;
-    --         Neg => or_Conj } ; -- neither-nor only for verbs, negation of and and or is or for now
-    --   in  mkNP (co ! Pos) (ts ! pol) ;     -- : Conj -> ListNP -> NP ;
+    -- The instances of mkListNP can be found at
+    --   https://www.grammaticalframework.org/lib/doc/synopsis/index.html#ListNP
+    BaseTerm = mkListNP ; -- : NP -> NP -> ListNP ;
+    ConsTerm = mkListNP ; -- : NP -> ListNP -> ListNP ;
+    ConjTerm = mkNP ;     -- : Conj -> ListNP -> NP
 
   -----------------------------------------------------------------
 
@@ -145,6 +133,7 @@ concrete QueryEng of Query = open
     --------------------
     -- Types for lincats
 
+    -- We don't need the full category of Det from RGL
     DetLite : Type = {s : Str ;  n : ParamX.Number} ;
 
     LinKind : Type = {
@@ -152,9 +141,9 @@ concrete QueryEng of Query = open
       adv : Adv ;
       k : KType
       } ;
-    LinTerm : Type = NP ; -- ParamX.Polarity => NP ;
-    LinConj : Type = ParamX.Polarity => Conj ;
-    LinDet : Type = KType => DetLite ; -- ParamX.Polarity => DetLite ;
+    LinTerm : Type = NP ;
+    LinConj : Type = Conj ;
+    LinDet : Type = KType => DetLite ;
     LinProp : Type = ParamX.Polarity => AP ;  -- Simplification: later use https://github.com/GrammaticalFramework/gf-contrib/blob/master/YAQL/YAQLFunctor.gf#L19
 
     --------
@@ -226,8 +215,7 @@ concrete QueryEng of Query = open
     -- Merge the discontinuous Kind into a single CN
     merge : LinKind -> CN = \kind -> mkCN kind.cn kind.adv ;
 
-    -- Default use for most NPs: pick the positive version (e.g. "some car", not "any car")
-    --np : LinTerm -> NP = \lt -> lt ! Pos ;
+    -- Default use for NPs
     np : LinTerm -> NP = id NP ;
 
     -- Default use for most APs: pick the positive version (e.g. "voluntary", not "involuntary")
