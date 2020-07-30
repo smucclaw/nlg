@@ -3,13 +3,13 @@ abstract SAFEQuery = Query ** {
 
   cat
     Action ;
-    'Action/Dir' ;
-    'Action/Indir' ;
-    'Action/Dir/Indir' ;
+    'Action_Dir' ;
+    'Action_Indir' ;
+    'Action_Dir_Indir' ;
     [Action]{2} ;              -- sells stock to Acme and raises capital
-    ['Action/Dir']{2} ;        -- sells today and issues (stock) at fixed valuation
-    ['Action/Indir']{2} ;      -- sells widgets and issues stock (at fixed valuation)
-    ['Action/Dir/Indir']{2} ;  -- sells and issues (stock) (at fixed valuation)
+    ['Action_Dir']{2} ;        -- sells today and issues (stock) at fixed valuation
+    ['Action_Indir']{2} ;      -- sells widgets and issues stock (at fixed valuation)
+    ['Action_Dir_Indir']{2} ;  -- sells and issues (stock) (at fixed valuation)
 
   fun
     -------------
@@ -19,40 +19,39 @@ abstract SAFEQuery = Query ** {
     Raise,                             -- raise capital
     Issue,                             -- issue stock
     Sell                               -- sell stock
-      : 'Action/Dir' ;
+      : 'Action_Dir' ;
 
     -- Indirect object
     IssueAt,                           -- issue stock at fixed valuation
     SellAt
-      : 'Action/Dir/Indir' ;
+      : 'Action_Dir_Indir' ;
 
     -- Complements
-    AComplDir   : 'Action/Dir' -> Term -> Action ;
-    AComplIndir : 'Action/Indir' -> Term -> Action ;
-    ASlashDir   : 'Action/Dir/Indir' -> Term -> 'Action/Indir' ; -- sell stock (at fixed valuation)
-    ASlashIndir : 'Action/Dir/Indir' -> Term -> 'Action/Dir' ;   -- sell (stock) at fixed valuation
+    AComplDir   : 'Action_Dir' -> Term -> Action ;
+    AComplIndir : 'Action_Indir' -> Term -> Action ;
+    ASlashDir   : 'Action_Dir_Indir' -> Term -> 'Action_Indir' ; -- sell stock (at fixed valuation)
+    ASlashIndir : 'Action_Dir_Indir' -> Term -> 'Action_Dir' ;   -- sell (stock) at fixed valuation
 
     -- Adjuncts: make an Action need another argument
-    PursuantTo : Action -> 'Action/Indir' ;
+    PursuantTo : Action -> 'Action_Indir' ;
 
-    -- Negation of a whole Action: doesn't sell X / doesn't sell X and Y
+    -- Negation of a whole Action: doesn't sell X _ doesn't sell X and Y
     ANeg : Action -> Action ;
 
     -- Negation regarding the complements
-    AComplNoneDir   : 'Action/Dir' -> [Term] -> Action ; -- sells neither X, Y nor Z
-    AComplNoneIndir : 'Action/Indir' -> [Term] -> Action ; -- sells (X) neither to B nor to B
+    AComplNoneDir   : 'Action_Dir' -> [Term] -> Action ; -- sells neither X, Y nor Z
+    AComplNoneIndir : 'Action_Indir' -> [Term] -> Action ; -- sells (X) neither to B nor to B
 
     -- Conjunctions
 
     ConjAction : Conjunction -> [Action] -> Action ;
-    ConjSlashDir : Conjunction -> ['Action/Dir'] -> 'Action/Dir' ;
-    ConjSlashIndir : Conjunction -> ['Action/Indir'] -> 'Action/Indir' ;
-    ConjSlashDirIndir : Conjunction -> ['Action/Dir/Indir'] -> 'Action/Dir/Indir' ;
+    ConjSlashDir : Conjunction -> ['Action_Dir'] -> 'Action_Dir' ;
+    ConjSlashIndir : Conjunction -> ['Action_Indir'] -> 'Action_Indir' ;
+    ConjSlashDirIndir : Conjunction -> ['Action_Dir_Indir'] -> 'Action_Dir_Indir' ;
 
   cat
-    -- Event ; -- TODO: figure out semantics
     Temporality ;
-    Polarity ;
+--    Polarity ;
 
   fun
     TPresent  : Temporality ;
@@ -63,7 +62,7 @@ abstract SAFEQuery = Query ** {
     -- PNegative : Polarity ;
 
     MAction : Temporality ->
-      Term -> Action -> Move ; -- the company raises/raised/will raise capital
+      Term -> Action -> Move ; -- the company raises_raised_will raise capital
 
   ----------------
     -- Properties --
@@ -110,19 +109,19 @@ abstract SAFEQuery = Query ** {
     -- Kinds with arguments --
     --------------------------
   cat
-    'Kind/Term' ;
-    ['Kind/Term']{2} ;
+    'Kind_Term' ;
+    ['Kind_Term']{2} ;
 
   fun
     Liquidation,
     Dissolution,
     WindingUp
-      : 'Kind/Term' ;
+      : 'Kind_Term' ;
 
-    ComplKind : 'Kind/Term' -> Term -> Kind ; -- liquidation of the company
+    ComplKind : 'Kind_Term' -> Term -> Kind ; -- liquidation of the company
 
     ConjSlashTerm -- "liquidation and dissolution of the company"
-     : Conjunction -> ['Kind/Term'] -> 'Kind/Term' ;
+     : Conjunction -> ['Kind_Term'] -> 'Kind_Term' ;
 
     -----------
     -- Terms --
@@ -140,14 +139,16 @@ abstract SAFEQuery = Query ** {
     RelIndir
       : Term ->       -- the contract
       Term ->         -- the Company
-      'Action/Indir' -> -- sells stock (under)
+      Temporality ->  -- (will)
+      'Action_Indir' -> -- sells stock (under)
       Term ; -- the contract, under which the company sells stock
 
     RelDir
       : Term ->       -- the contract
       Term ->         -- the Company
-      'Action/Dir' ->   -- signs
-      Term ; -- the contract, which the company signs
+      Temporality ->  -- (will)
+      'Action_Dir' ->   -- signs
+      Term ; -- the contract, which the company signs_will sign
 
 
     --Series,   -- a series of transactions
