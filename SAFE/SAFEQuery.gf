@@ -32,6 +32,9 @@ abstract SAFEQuery = Query ** {
     ASlashDir   : 'Action/Dir/Indir' -> Term -> 'Action/Indir' ; -- sell stock (at fixed valuation)
     ASlashIndir : 'Action/Dir/Indir' -> Term -> 'Action/Dir' ;   -- sell (stock) at fixed valuation
 
+    -- Adjuncts: make an Action need another argument
+    PursuantTo : Action -> 'Action/Indir' ;
+
     -- Negation of a whole Action: doesn't sell X / doesn't sell X and Y
     ANeg : Action -> Action ;
 
@@ -54,13 +57,13 @@ abstract SAFEQuery = Query ** {
   fun
     TPresent  : Temporality ;
     TPast     : Temporality ;
+    TFuture   : Temporality ;
 
-    PPositive : Polarity ;
-    PNegative : Polarity ;
+    -- PPositive : Polarity ;
+    -- PNegative : Polarity ;
 
-    MAction : Temporality -> -- Polarity ->
-      Term -> Action -> Move ; -- the company raises/raised/doesn't raise capital
-    MDefTermUnder : Kind -> Term -> Term -> Action -> Move ;
+    MAction : Temporality ->
+      Term -> Action -> Move ; -- the company raises/raised/will raise capital
 
   ----------------
     -- Properties --
@@ -101,6 +104,8 @@ abstract SAFEQuery = Query ** {
     KWhetherOr  -- dissolution event, whether voluntary or involuntary
       : [Property] -> Kind -> Kind ;
 
+    SingleOrSeries : Kind -> Kind ;
+
     --------------------------
     -- Kinds with arguments --
     --------------------------
@@ -132,13 +137,20 @@ abstract SAFEQuery = Query ** {
       Kind -> Term ->
       Term ;
 
-    UnderWhich
-      : Term -> -- the contract, (under which)
-      Term ->   -- the Company
-      Action -> -- sells stock
-      Term ;
+    RelIndir
+      : Term ->       -- the contract
+      Term ->         -- the Company
+      'Action/Indir' -> -- sells stock (under)
+      Term ; -- the contract, under which the company sells stock
 
-    Series,   -- a series of transactions
+    RelDir
+      : Term ->       -- the contract
+      Term ->         -- the Company
+      'Action/Dir' ->   -- signs
+      Term ; -- the contract, which the company signs
+
+
+    --Series,   -- a series of transactions
     AnyOther  -- any other liquidation, dissolution or winding up
       : Determiner ;
 

@@ -49,6 +49,13 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     -- : 'Action/Dir/Indir' -> Term -> 'Action/Dir' ;   -- sell (stock) at fixed valuation
     ASlashIndir = slashIndir ;
 
+    -- Adjuncts
+    -- : Action -> 'Action/Indir'
+    PursuantTo a = a ** {
+      indir = pursuant_to_Prep ;
+      dir = \\_ => emptyAdv
+      } ;
+
     -- Negations
     -- : Action -> Action ;        -- doesn't sell X / doesn't sell X and Y
     ANeg action = action ** {
@@ -136,15 +143,11 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
       } ;
 
     -- : Term -> Action -> Move ; -- the company raises capital
-    MAction temp t a = mkText (mkUtt (cl temp PPositive t a)) fullStopPunct ;
-
-    --  : Kind -> Term -> Term -> Action -> Move ;
-    MDefTermUnder kind definition actor action =
-      MDefTerm kind (UnderWhich definition actor action) ;
-
+    MAction temp t a = mkText (mkUtt (cl temp positivePol t a)) fullStopPunct ;
 
     TPresent = presentTense ;
     TPast = pastTense ;
+    TFuture = futureTense ;
     PPositive = positivePol ;
     PNegative = negativePol ;
 
@@ -168,6 +171,13 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
        in E.MkVPS (mkTemp tense simultaneousAnt) pol ;
 
     emptyTerm : LinTerm = emptyNP ;
+
+    relAction : Term -> PrepPol -> LinAction -> RS = \subj,prep,action ->
+      let dummyRS : RS = mkRS (mkRCl (mkCl (mkN "dummy"))) ; -- to get all fields in RS and not touch RGL internals. TODO: eventually add this construction to Extend.
+          pr : PrepPlus = prep ! R.CPos ; -- TODO check if negation works properly
+          s : S = cl presentTense positivePol subj action ;
+       in dummyRS ** {s = \\agr => pr.s ++ "which" ++ s.s} ;
+
     ----------------------
     -- Slash categories --
     ----------------------
@@ -196,11 +206,11 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
       } ;
     complDir : SlashDir -> LinTerm -> LinAction = \vps,do -> vps ** {
       s = \\t,p => complS (vps.s ! t ! p)
-                          (applyPrepPol vps.dir do ! p)
-                          (vps.indir ! p) ;
+                          (vps.indir ! p)
+                          (applyPrepPol vps.dir do ! p) ;
       gerund = \\p => complGer (vps.gerund ! p)
+                            (vps.indir ! pol2cpol p)
                             (applyPrepPol vps.dir do ! pol2cpol p)
-                            (vps.indir ! pol2cpol p) ;
       } ;
 
     -- /Indir
@@ -399,6 +409,18 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     'ConsKind/Term' = C.ConsCN ;
     ConjSlashTerm = C.ConjCN ;
 
+    SingleOrSeries kind = kind ** {
+      cn = C.ConjCN
+        or_Conj
+        (C.BaseCN
+           (merge kind) --kind.cn
+           (mkCN series_N2 (mkNP aPl_Det (merge kind) )) -- kind.cn))
+        ) ;
+      -- merged to avoid ambiguity: only "(X or series of X) with Y" allowed
+      -- the other possibility becomes "(X with Y) or series of (X with Y)"
+      adv = emptyAdv
+      } ;
+
     -----------
     -- Terms --
     -----------
@@ -426,16 +448,18 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
             } ; -- Potential postmodifier is in valuation's adv field
       in term the valuation_incl ;
 
-    -- : Term -> Term -> Action -> Term ;
-    UnderWhich contract company sells_stock =
-      let under : Str = "pursuant to" ;
-          dummyRS : RS = mkRS (mkRCl (mkCl (mkN "dummy"))) ; -- to get all fields in RS and not touch RGL internals. TODO: eventually add this construction to Extend.
-          s : S = cl presentTense positivePol company sells_stock ;
-          rs : RS = dummyRS ** {s = \\agr => under ++ "which" ++ s.s} ;
-       in mkNP contract rs ;
+    -- : Term -> Term -> Action/Indir -> Term ;
+    RelIndir iobj subj vpslash =
+      let rs : RS = relAction subj vpslash.indir <vpslash : LinAction>
+       in mkNP iobj rs ;
+
+    -- : Term -> Term -> Action/Dir -> Term ;
+    RelDir dobj subj vpslash =
+      let rs : RS = relAction subj vpslash.dir <vpslash : LinAction>
+       in mkNP dobj rs ;
+
 
     AnyOther = any_other_Det ;
-    Series = series_Det ;
 
   oper
     -------------
@@ -466,6 +490,7 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     excluding_Prep : Prep = mkPrep "excluding" ;
     including_Prep : Prep =  -- endComma: disappears in front of other punctuation
       mkPrep ("including" ++ strOpt ("but not limited to" ++ Prelude.endComma)) ;
+    pursuant_to_Prep : PrepPol = prepPol "pursuant to" ;
 
 
     ----------
