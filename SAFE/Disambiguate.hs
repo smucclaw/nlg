@@ -14,62 +14,51 @@ disambiguate :: Tree -> [Tree]
 disambiguate = map gf . disambiguateMove . fg
 
 -- For each ambiguous term in the Move, return another Move
-disambiguateMove :: GMove -> [GMove]
+disambiguateMove :: Move -> [Move]
 disambiguateMove = mapMaybe expandRelative . findTerms
 
-findTerms :: GMove -> [GTerm]
+findTerms :: Move -> [Term]
 findTerms move =
   toListOf termsInKindsInTerms move ++ toListOf termsIn move
  where
   -- Giving names and type signatures to template
-  termsInKindsInTerms :: Traversal' GMove GTerm
+  termsInKindsInTerms :: Traversal' Move Term
   termsInKindsInTerms = termsIn . kindsInTerm . termsIn
 
-  termsIn :: (Data s) => Traversal' s GTerm
+  termsIn :: (Data s) => Traversal' s Term
   termsIn = template
 
-  kindsInTerm :: Traversal' GTerm GKind
+  kindsInTerm :: Traversal' Term Kind
   kindsInTerm = template
 
 {- The most important function: expands relative clauses like
    "a contract, under which the Company sells stock"
  → "the Company sells stock under a contract" -}
-expandRelative :: GTerm -> Maybe GMove
+expandRelative :: Term -> Maybe Move
 expandRelative term = case term of
- GRelDir dobj subj tns vpslash
+ RelDir dobj subj tns vpslash
    -> Just $ simplifyTerms $
-      GMAction tns subj (GAComplDir vpslash dobj)
- GRelIndir iobj subj tns vpslash
+      MAction tns subj (AComplDir vpslash dobj)
+ RelIndir iobj subj tns vpslash
    -> Just $ simplifyTerms $
-      GMAction tns subj (GAComplIndir vpslash iobj)
+      MAction tns subj (AComplIndir vpslash iobj)
  x ->  Nothing -- Term doesn't have a relative clause
 -- x -> trace (show x) Nothing -- debug: show the term
 
-simplifyTerms :: GMove -> GMove
+simplifyTerms :: Move -> Move
 simplifyTerms = over template onlyHead
  where
-  onlyHead :: GTerm -> GTerm
+  onlyHead :: Term -> Term
   onlyHead term = case term of
-    GTExcluding det kind _
-      -> GTDet det (rmAdjuncts kind)
-    GTIncluding det kind _
-      -> GTDet det (rmAdjuncts kind)
+    TExcluding det kind _
+      -> TDet det (rmAdjuncts kind)
+    TIncluding det kind _
+      -> TDet det (rmAdjuncts kind)
     _ -> over template rmAdjuncts term
 
-  rmAdjuncts :: GKind -> GKind
+  rmAdjuncts :: Kind -> Kind
   rmAdjuncts kind = case kind of
-    GKProperty _ k -> rmAdjuncts k
-    GKWhetherOr _ k -> rmAdjuncts k
-    GSingleOrSeries k -> rmAdjuncts k
+    KProperty _ k -> rmAdjuncts k
+    KWhetherOr _ k -> rmAdjuncts k
+    SingleOrSeries k -> rmAdjuncts k
     _ -> kind
-
-{-
-{-# LANGUAGE DeriveDataTypeable #-}
-
-module SAFEQuery where
-
-import PGF hiding (Tree)
-import Data.Data
-
--}
--- $>
