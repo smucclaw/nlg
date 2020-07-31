@@ -2,6 +2,7 @@ module Main where
 
 import PGF
 import Data.List
+import System.IO (hFlush, stdout)
 import Disambiguate (disambiguate)
 
 
@@ -10,27 +11,40 @@ main = do
   gr <- readPGF "SAFEQuery.pgf"
   putStrLn "Write your sentence here. If it's ambiguous, I will ask for clarification."
   putStrLn "Write quit to exit."
-  loop (f disambiguate gr)
+  loop (apply disambiguate gr)
 
 loop :: (String -> String) -> IO ()
 loop trans = do
-   s <- getLine
-   if s == "quit" then putStrLn "bye" else do
-     putStrLn $ trans s
-     loop trans
+  putStr "> "
+  hFlush stdout
+  s <- getLine
+  if s == "quit" then putStrLn "bye" else do
+    putStrLn $ trans s
+    loop trans
 
-f :: (Tree -> [Tree]) -> PGF -> String -> String
-f tr gr s = case parseAllLang gr (startCat gr) s of
+apply :: (Tree -> [Tree]) -> PGF -> String -> String
+apply tr gr s = case parseAllLang gr (startCat gr) s of
   (lg,[t]):_ -> unlines [
     "The input is not ambiguous.",
     showExpr [] t]
 
   (lg,ts@(x:xs)):_ -> unlines $
-    "The sentence has the following interpretations":
     "":
-    (nub [ "* " ++
-      unlines
-       (fmap (linearize gr lg) moves)
-    | t <- ts , let moves = tr t ])
+    "The sentence has the following interpretations:":
+    "":
+    (nub [ "* " ++ unlines
+           (linearize gr lg `fmap` interpretations)
+         | t <- ts
+         , let interpretations = tr t ])
 
-  _ -> "Can't parse the input."
+  _ -> case last s of
+    '.' -> noparse
+    _   -> let variants = [
+                 result
+                 | suf <- [" .", " , ."]
+                 , let result = apply tr gr (s ++ suf)
+                 , not $ result == noparse ]
+           in last $ noparse:variants
+
+  where
+    noparse = "Can't parse the input."
