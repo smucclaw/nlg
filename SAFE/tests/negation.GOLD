@@ -63,7 +63,7 @@ MAction TPresent Company (AComplNoneDir Sell (BaseTerm (TDet ASg PreferredStock)
 ** Multiple predicates
 
 ** the Company sells and issues preferred stock .
-MAction TPresent Company (AComplDir (ConjSlashDir And ('BaseAction/Dir' Sell Issue)) (TDet ASg PreferredStock))
+MAction TPresent Company (AComplDir (ConjSlashDir And (BaseAD Sell Issue)) (TDet ASg PreferredStock))
 
 
 ** the Company neither sells nor issues preferred stock .
