@@ -12,13 +12,13 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
 
   lincat
     Action = LinAction ; -- Negations affect more than standard RGL negation does
-    'Action_Dir' = SlashDir ;
-    'Action_Indir' = SlashIndir ;
-    'Action_Dir_Indir' = SlashDirIndir ;
+    'Action/Dir' = SlashDir ;
+    'Action/Indir' = SlashIndir ;
+    'Action/Dir/Indir' = SlashDirIndir ;
     [Action] = ListLinAction ;
-    ['Action_Dir'] = ListSlashDir ;
-    ['Action_Indir'] = ListSlashIndir ;
-    ['Action_Dir_Indir'] = ListSlashDirIndir ;
+    ListActionDir = ListSlashDir ;
+    ListActionIndir = ListSlashIndir ;
+    ListActionDirIndir = ListSlashDirIndir ;
 
     Temporality = Tense ;
     Polarity = Pol ;
@@ -40,24 +40,24 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     SellAt = mkDirIndir sell_at_V3 whether_at_Prep ;
 
     -- Complements
-    -- : 'Action_Dir' -> Term -> Action ;
+    -- : 'Action/Dir' -> Term -> Action ;
     AComplDir = complDir ;
-    -- : 'Action_Indir' -> Term -> Action ;
+    -- : 'Action/Indir' -> Term -> Action ;
     AComplIndir = complIndir ;
-    -- : 'Action_Dir_Indir' -> Term -> 'Action_Indir' ; -- sell stock (at fixed valuation)
+    -- : 'Action/Dir/Indir' -> Term -> 'Action/Indir' ; -- sell stock (at fixed valuation)
     ASlashDir = slashDir ;
-    -- : 'Action_Dir_Indir' -> Term -> 'Action_Dir' ;   -- sell (stock) at fixed valuation
+    -- : 'Action/Dir/Indir' -> Term -> 'Action/Dir' ;   -- sell (stock) at fixed valuation
     ASlashIndir = slashIndir ;
 
     -- Adjuncts
-    -- : Action -> 'Action_Indir'
+    -- : Action -> 'Action/Indir'
     PursuantTo a = a ** {
       indir = pursuant_to_Prep ;
       dir = \\_ => emptyAdv
       } ;
 
     -- Negations
-    -- : Action -> Action ;        -- doesn't sell X _ doesn't sell X and Y
+    -- : Action -> Action ;        -- doesn't sell X / doesn't sell X and Y
     ANeg action = action ** {
       s = \\t,p => case p of {
         --R.CNeg _ => action.s ! t ! R.CPos ; -- double negation = positive
@@ -68,12 +68,12 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
         _ => action.gerund ! R.Neg
         }
       } ;
-    -- : 'Action_Dir' -> [Term] -> Action ; -- sells neither X, Y nor Z
+    -- : 'Action/Dir' -> [Term] -> Action ; -- sells neither X, Y nor Z
     AComplNoneDir v2 obj =
       let none_of : NP = mkNP neither7nor_DConj obj ;
        in complDir v2 none_of ;
 
-    --  AComplNoneIndir : 'Action_Indir' -> [Term] -> Action ; -- sells (X) neither to B nor to B
+    --  AComplNoneIndir : 'Action/Indir' -> [Term] -> Action ; -- sells (X) neither to B nor to B
 
 
     -- Conjunctions
@@ -92,14 +92,14 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
         SyntaxEng.mkAdv co (as.gerund ! p)
       } ;
 
-    'BaseAction_Dir' a1 a2 =
+    BaseAD a1 a2 =
       let a1' : LinAction = complDir a1 emptyTerm ;
           a2' : LinAction = complDir a2 emptyTerm ;
       in BaseAction a1' a2' ** {
         dir = a1.dir ; -- : PrepPol
         indir = \\p => emptyAdv ; -- the existing indir has been incorporated in a1' and a2'
       } ;
-    'ConsAction_Dir' a as =
+    ConsAD a as =
       let a' : LinAction = complDir a emptyTerm ;
       in ConsAction a' <as:ListLinAction> ** {
         dir = as.dir ; -- : PrepPol
@@ -110,14 +110,14 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
       indir = as.indir
       } ;
 
-    'BaseAction_Indir' a1 a2 =
+    BaseAI a1 a2 =
       let a1' : LinAction = complIndir a1 emptyTerm ;
           a2' : LinAction = complIndir a2 emptyTerm ;
       in BaseAction a1' a2' ** {
         indir = a1.indir ; -- : PrepPol
        dir = \\p => emptyAdv ; -- the existing dir has been incorporated in a1' and a2'
       } ;
-    'ConsAction_Indir' a as =
+    ConsAI a as =
       let a' : LinAction = complIndir a emptyTerm ;
       in ConsAction a' <as:ListLinAction> ** {
         indir = as.indir ; -- : PrepPol
@@ -129,11 +129,11 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
       indir = as.indir
       } ;
 
-    'BaseAction_Dir_Indir' a1 a2 = BaseAction a1 a2 ** {
+    BaseADI a1 a2 = BaseAction a1 a2 ** {
       dir = a2.dir ;
       indir = a2.indir
       } ;
-    'ConsAction_Dir_Indir' a as = ConsAction a as ** {
+    ConsADI a as = ConsAction a as ** {
       dir = as.dir ;
       indir = as.indir
       } ;
@@ -177,7 +177,6 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
           pr : PrepPlus = prep ! R.CPos ; -- TODO check if negation works properly
           s : S = cl tns positivePol subj action ;
        in dummyRS ** {s = \\agr => pr.s ++ "which" ++ s.s} ;
-
     ----------------------
     -- Slash categories --
     ----------------------
@@ -192,9 +191,9 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
           R.Neg => negAdv }
       } ;
 
-    -- _Dir
+    -- /Dir
     SlashDir : Type = LinAction ** {
-      indir : R.CPolarity => Adv ; -- at fixed valuation _ whether at fv nor without fv
+      indir : R.CPolarity => Adv ; -- at fixed valuation / whether at fv nor without fv
       dir : PrepPol
       } ;
     mkDir : V2 -> SlashDir = \v2 -> mkGerS v2 ** {
@@ -213,9 +212,9 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
                             (applyPrepPol vps.dir do ! pol2cpol p)
       } ;
 
-    -- _Indir
+    -- /Indir
     SlashIndir : Type = LinAction ** {
-      dir : R.CPolarity => Adv ; -- (Acme will_won't sell) some_any stock
+      dir : R.CPolarity => Adv ; -- (Acme will/won't sell) some/any stock
       indir : PrepPol ;
       } ;
     mkIndir : V2 -> SlashIndir = \v2 -> mkGerS v2 ** {
@@ -235,7 +234,7 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
       } ;
 
 
-    -- _Dir_Indir
+    -- /Dir/Indir
     SlashDirIndir : Type = LinAction ** {
       dir,
       indir : PrepPol ;
@@ -252,10 +251,10 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
       } ;
     -- PrepPol is more powerful than Prep: prepared for multilayer negations
     PrepPol : Type = R.CPolarity => PrepPlus ;
-    PrepPlus : Type = {  -- Positive version  _ Negative version
-      s : Str ;      -- at (fixed valuation) _ whether at (fixed valuation)
-      post : Str ;   -- ∅                    _ or without
-      redupl : Bool  -- False                _ True       (fixed valuation)
+    PrepPlus : Type = {  -- Positive version  / Negative version
+      s : Str ;      -- at (fixed valuation) / whether at (fixed valuation)
+      post : Str ;   -- ∅                    / or without
+      redupl : Bool  -- False                / True       (fixed valuation)
       } ;
 
     prepPol = overload {
@@ -298,12 +297,12 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     -- List versions --
     -------------------
     ListSlashDir : Type = ListLinAction ** {
-      indir : R.CPolarity => Adv ; -- at fixed valuation _ whether at fv nor without fv
+      indir : R.CPolarity => Adv ; -- at fixed valuation / whether at fv nor without fv
       dir : PrepPol ;
       } ;
 
     ListSlashIndir : Type = ListLinAction ** {
-      dir : R.CPolarity => Adv ; -- (Acme will_won't sell) some_any stock
+      dir : R.CPolarity => Adv ; -- (Acme will/won't sell) some/any stock
       indir : PrepPol ;
       } ;
 
@@ -319,11 +318,11 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
       let s : S = E.PredVPS (np subj) (pred.s ! t.t ! p.p)
        in s ** {s = s.s ++ t.s ++ p.s} ;
     -- This is silly, but I need to do it this way, because instead of VP, which is variable in
-    -- tense and polarity, I'm storing _fully formed VPS_s in a table with R.Tense and R.CPolarity as LHS.
+    -- tense and polarity, I'm storing /fully formed VPS/s in a table with R.Tense and R.CPolarity as LHS.
     -- (Why do I store VPS instead of VP? To be able to coordinate them.)
     -- When an abstract syntax value like TPresent or PPositive is used to choose the correct VPS,
     -- I need to use the s fields of those values, so that every argument contributes to the linearization.
-    -- See https:__inariksit.github.io_gf_2018_08_28_gf-gotchas.html#metavariables-or-those-question-marks-that-appear-when-parsing
+    -- See https://inariksit.github.io/gf/2018/08/28/gf-gotchas.html#metavariables-or-those-question-marks-that-appear-when-parsing
 
     gerund : LinAction -> R.Polarity=>NP = \pred -> \\pol =>
       let s : Str = (pred.gerund ! pol).s in mkNP (mkN s s s s) ;
@@ -388,8 +387,8 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     Valuation = kind "valuation" ;
 
   lincat
-    'Kind_Term' = CN ;
-    'ListKind_Term' = C.ListCN ;
+    'Kind/Term' = CN ;
+    ListKindTerm = C.ListCN ;
 
   lin
     Liquidation = mkCN (mkN "liquidation") ;
@@ -405,8 +404,8 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
       in kind ** {
         adv = cc2 kind.adv prop } ;
 
-    'BaseKind_Term' = C.BaseCN ;
-    'ConsKind_Term' = C.ConsCN ;
+    BaseKT = C.BaseCN ;
+    ConsKT = C.ConsCN ;
     ConjSlashTerm = C.ConjCN ;
 
     SingleOrSeries kind = kind ** {
@@ -448,14 +447,14 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
             } ; -- Potential postmodifier is in valuation's adv field
       in term the valuation_incl ;
 
-    -- : Term -> Term -> Temporality -> Action_Indir -> Term ;
-    RelIndir iobj subj tns vpslash =
-      let rs : RS = relAction tns subj vpslash.indir <vpslash : LinAction>
+    -- : Term -> Term -> Temporality -> Action/Indir -> Term ;
+    RelIndir iobj subj tense vpslash =
+      let rs : RS = relAction tense subj vpslash.indir <vpslash : LinAction>
        in mkNP iobj rs ;
 
-    -- : Term -> Term -> Temporality -> Action_Dir -> Term ;
-    RelDir dobj subj tns vpslash =
-      let rs : RS = relAction tns subj vpslash.dir <vpslash : LinAction>
+    -- : Term -> Term -> Temporality -> Action/Dir -> Term ;
+    RelDir dobj subj tense vpslash =
+      let rs : RS = relAction tense subj vpslash.dir <vpslash : LinAction>
        in mkNP dobj rs ;
 
 
