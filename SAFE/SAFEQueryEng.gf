@@ -16,9 +16,9 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     'Action/Indir' = SlashIndir ;
     'Action/Dir/Indir' = SlashDirIndir ;
     [Action] = ListLinAction ;
-    ['Action/Dir'] = ListSlashDir ;
-    ['Action/Indir'] = ListSlashIndir ;
-    ['Action/Dir/Indir'] = ListSlashDirIndir ;
+    ListActionDir = ListSlashDir ;
+    ListActionIndir = ListSlashIndir ;
+    ListActionDirIndir = ListSlashDirIndir ;
 
     Temporality = Tense ;
     Polarity = Pol ;
@@ -48,6 +48,13 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     ASlashDir = slashDir ;
     -- : 'Action/Dir/Indir' -> Term -> 'Action/Dir' ;   -- sell (stock) at fixed valuation
     ASlashIndir = slashIndir ;
+
+    -- Adjuncts
+    -- : Action -> 'Action/Indir'
+    PursuantTo a = a ** {
+      indir = pursuant_to_Prep ;
+      dir = \\_ => emptyAdv
+      } ;
 
     -- Negations
     -- : Action -> Action ;        -- doesn't sell X / doesn't sell X and Y
@@ -85,14 +92,14 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
         SyntaxEng.mkAdv co (as.gerund ! p)
       } ;
 
-    'BaseAction/Dir' a1 a2 =
+    BaseAD a1 a2 =
       let a1' : LinAction = complDir a1 emptyTerm ;
           a2' : LinAction = complDir a2 emptyTerm ;
       in BaseAction a1' a2' ** {
         dir = a1.dir ; -- : PrepPol
         indir = \\p => emptyAdv ; -- the existing indir has been incorporated in a1' and a2'
       } ;
-    'ConsAction/Dir' a as =
+    ConsAD a as =
       let a' : LinAction = complDir a emptyTerm ;
       in ConsAction a' <as:ListLinAction> ** {
         dir = as.dir ; -- : PrepPol
@@ -103,14 +110,14 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
       indir = as.indir
       } ;
 
-    'BaseAction/Indir' a1 a2 =
+    BaseAI a1 a2 =
       let a1' : LinAction = complIndir a1 emptyTerm ;
           a2' : LinAction = complIndir a2 emptyTerm ;
       in BaseAction a1' a2' ** {
         indir = a1.indir ; -- : PrepPol
        dir = \\p => emptyAdv ; -- the existing dir has been incorporated in a1' and a2'
       } ;
-    'ConsAction/Indir' a as =
+    ConsAI a as =
       let a' : LinAction = complIndir a emptyTerm ;
       in ConsAction a' <as:ListLinAction> ** {
         indir = as.indir ; -- : PrepPol
@@ -122,11 +129,11 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
       indir = as.indir
       } ;
 
-    'BaseAction/Dir/Indir' a1 a2 = BaseAction a1 a2 ** {
+    BaseADI a1 a2 = BaseAction a1 a2 ** {
       dir = a2.dir ;
       indir = a2.indir
       } ;
-    'ConsAction/Dir/Indir' a as = ConsAction a as ** {
+    ConsADI a as = ConsAction a as ** {
       dir = as.dir ;
       indir = as.indir
       } ;
@@ -136,15 +143,11 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
       } ;
 
     -- : Term -> Action -> Move ; -- the company raises capital
-    MAction temp t a = mkText (mkUtt (cl temp PPositive t a)) fullStopPunct ;
-
-    --  : Kind -> Term -> Term -> Action -> Move ;
-    MDefTermUnder kind definition actor action =
-      MDefTerm kind (UnderWhich definition actor action) ;
-
+    MAction temp t a = mkText (mkUtt (cl temp positivePol t a)) fullStopPunct ;
 
     TPresent = presentTense ;
     TPast = pastTense ;
+    TFuture = futureTense ;
     PPositive = positivePol ;
     PNegative = negativePol ;
 
@@ -168,6 +171,12 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
        in E.MkVPS (mkTemp tense simultaneousAnt) pol ;
 
     emptyTerm : LinTerm = emptyNP ;
+
+    relAction : Tense -> Term -> PrepPol -> LinAction -> RS = \tns,subj,prep,action ->
+      let dummyRS : RS = mkRS (mkRCl (mkCl (mkN "dummy"))) ; -- to get all fields in RS and not touch RGL internals. TODO: eventually add this construction to Extend.
+          pr : PrepPlus = prep ! R.CPos ; -- TODO check if negation works properly
+          s : S = cl tns positivePol subj action ;
+       in dummyRS ** {s = \\agr => pr.s ++ "which" ++ s.s} ;
     ----------------------
     -- Slash categories --
     ----------------------
@@ -196,11 +205,11 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
       } ;
     complDir : SlashDir -> LinTerm -> LinAction = \vps,do -> vps ** {
       s = \\t,p => complS (vps.s ! t ! p)
-                          (applyPrepPol vps.dir do ! p)
-                          (vps.indir ! p) ;
+                          (vps.indir ! p)
+                          (applyPrepPol vps.dir do ! p) ;
       gerund = \\p => complGer (vps.gerund ! p)
+                            (vps.indir ! pol2cpol p)
                             (applyPrepPol vps.dir do ! pol2cpol p)
-                            (vps.indir ! pol2cpol p) ;
       } ;
 
     -- /Indir
@@ -305,7 +314,7 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     ---------------------
     -- Generic helpers --
     ---------------------
-    cl : Tense -> Polarity -> LinTerm -> LinAction -> S = \t,p,subj,pred ->
+    cl : Tense -> Pol -> LinTerm -> LinAction -> S = \t,p,subj,pred ->
       let s : S = E.PredVPS (np subj) (pred.s ! t.t ! p.p)
        in s ** {s = s.s ++ t.s ++ p.s} ;
     -- This is silly, but I need to do it this way, because instead of VP, which is variable in
@@ -379,7 +388,7 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
 
   lincat
     'Kind/Term' = CN ;
-    'ListKind/Term' = C.ListCN ;
+    ListKindTerm = C.ListCN ;
 
   lin
     Liquidation = mkCN (mkN "liquidation") ;
@@ -395,9 +404,21 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
       in kind ** {
         adv = cc2 kind.adv prop } ;
 
-    'BaseKind/Term' = C.BaseCN ;
-    'ConsKind/Term' = C.ConsCN ;
+    BaseKT = C.BaseCN ;
+    ConsKT = C.ConsCN ;
     ConjSlashTerm = C.ConjCN ;
+
+    SingleOrSeries kind = kind ** {
+      cn = C.ConjCN
+        or_Conj
+        (C.BaseCN
+           (merge kind) --kind.cn
+           (mkCN series_N2 (mkNP aPl_Det (merge kind) )) -- kind.cn))
+        ) ;
+      -- merged to avoid ambiguity: only "(X or series of X) with Y" allowed
+      -- the other possibility becomes "(X with Y) or series of (X with Y)"
+      adv = emptyAdv
+      } ;
 
     -----------
     -- Terms --
@@ -426,16 +447,20 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
             } ; -- Potential postmodifier is in valuation's adv field
       in term the valuation_incl ;
 
-    -- : Term -> Term -> Action -> Term ;
-    UnderWhich contract company sells_stock =
-      let under : Str = "pursuant to" ;
-          dummyRS : RS = mkRS (mkRCl (mkCl (mkN "dummy"))) ; -- to get all fields in RS and not touch RGL internals. TODO: eventually add this construction to Extend.
-          s : S = cl presentTense positivePol company sells_stock ;
-          rs : RS = dummyRS ** {s = \\agr => under ++ "which" ++ s.s} ;
-       in mkNP contract rs ;
+    -- : Term -> Term -> Temporality -> Action/Indir -> Term ;
+    RelIndir iobj subj tense vpslash =
+      let vp : LinAction = complIndir (vpslash ** {indir=emptyPrep}) emptyTerm ;
+          rs : RS = relAction tense subj vpslash.indir vp ;
+       in mkNP iobj rs ;
+
+    -- : Term -> Term -> Temporality -> Action/Dir -> Term ;
+    RelDir dobj subj tense vpslash =
+      let vp : LinAction = complDir (vpslash ** {dir=emptyPrep}) emptyTerm ;
+          rs : RS = relAction tense subj vpslash.dir vp ;
+       in mkNP dobj rs ;
+
 
     AnyOther = any_other_Det ;
-    Series = series_Det ;
 
   oper
     -------------
@@ -466,7 +491,8 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     excluding_Prep : Prep = mkPrep "excluding" ;
     including_Prep : Prep =  -- endComma: disappears in front of other punctuation
       mkPrep ("including" ++ strOpt ("but not limited to" ++ Prelude.endComma)) ;
-
+    pursuant_to_Prep : PrepPol = prepPol "pursuant to" ;
+    emptyPrep : PrepPol = prepPol "" ;
 
     ----------
     -- Misc --

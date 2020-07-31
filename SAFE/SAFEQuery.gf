@@ -7,9 +7,9 @@ abstract SAFEQuery = Query ** {
     'Action/Indir' ;
     'Action/Dir/Indir' ;
     [Action]{2} ;              -- sells stock to Acme and raises capital
-    ['Action/Dir']{2} ;        -- sells today and issues (stock) at fixed valuation
-    ['Action/Indir']{2} ;      -- sells widgets and issues stock (at fixed valuation)
-    ['Action/Dir/Indir']{2} ;  -- sells and issues (stock) (at fixed valuation)
+    ListActionDir ;            -- sells today and issues (stock) at fixed valuation
+    ListActionIndir ;          -- sells widgets and issues stock (at fixed valuation)
+    ListActionDirIndir ;       -- sells and issues (stock) (at fixed valuation)
 
   fun
     -------------
@@ -32,6 +32,9 @@ abstract SAFEQuery = Query ** {
     ASlashDir   : 'Action/Dir/Indir' -> Term -> 'Action/Indir' ; -- sell stock (at fixed valuation)
     ASlashIndir : 'Action/Dir/Indir' -> Term -> 'Action/Dir' ;   -- sell (stock) at fixed valuation
 
+    -- Adjuncts: make an Action need another argument
+    PursuantTo : Action -> 'Action/Indir' ;
+
     -- Negation of a whole Action: doesn't sell X / doesn't sell X and Y
     ANeg : Action -> Action ;
 
@@ -41,26 +44,32 @@ abstract SAFEQuery = Query ** {
 
     -- Conjunctions
 
+    BaseAD : 'Action/Dir' -> 'Action/Dir' -> ListActionDir ;
+    ConsAD : 'Action/Dir' -> ListActionDir -> ListActionDir ;
+    BaseAI : 'Action/Indir' -> 'Action/Indir' -> ListActionIndir ;
+    ConsAI : 'Action/Indir' -> ListActionIndir -> ListActionIndir ;
+    BaseADI : 'Action/Dir/Indir' -> 'Action/Dir/Indir' -> ListActionDirIndir ;
+    ConsADI : 'Action/Dir/Indir' -> ListActionDirIndir -> ListActionDirIndir ;
+
     ConjAction : Conjunction -> [Action] -> Action ;
-    ConjSlashDir : Conjunction -> ['Action/Dir'] -> 'Action/Dir' ;
-    ConjSlashIndir : Conjunction -> ['Action/Indir'] -> 'Action/Indir' ;
-    ConjSlashDirIndir : Conjunction -> ['Action/Dir/Indir'] -> 'Action/Dir/Indir' ;
+    ConjSlashDir : Conjunction -> ListActionDir -> 'Action/Dir' ;
+    ConjSlashIndir : Conjunction -> ListActionIndir -> 'Action/Indir' ;
+    ConjSlashDirIndir : Conjunction -> ListActionDirIndir -> 'Action/Dir/Indir' ;
 
   cat
-    -- Event ; -- TODO: figure out semantics
     Temporality ;
-    Polarity ;
+--    Polarity ;
 
   fun
     TPresent  : Temporality ;
     TPast     : Temporality ;
+    TFuture   : Temporality ;
 
-    PPositive : Polarity ;
-    PNegative : Polarity ;
+    -- PPositive : Polarity ;
+    -- PNegative : Polarity ;
 
-    MAction : Temporality -> -- Polarity ->
-      Term -> Action -> Move ; -- the company raises/raised/doesn't raise capital
-    MDefTermUnder : Kind -> Term -> Term -> Action -> Move ;
+    MAction : Temporality ->
+      Term -> Action -> Move ; -- the company raises/raised/will raise capital
 
   ----------------
     -- Properties --
@@ -101,12 +110,14 @@ abstract SAFEQuery = Query ** {
     KWhetherOr  -- dissolution event, whether voluntary or involuntary
       : [Property] -> Kind -> Kind ;
 
+    SingleOrSeries : Kind -> Kind ;
+
     --------------------------
     -- Kinds with arguments --
     --------------------------
   cat
     'Kind/Term' ;
-    ['Kind/Term']{2} ;
+    ListKindTerm ; -- winding up and dissolution (of the Company)
 
   fun
     Liquidation,
@@ -116,8 +127,10 @@ abstract SAFEQuery = Query ** {
 
     ComplKind : 'Kind/Term' -> Term -> Kind ; -- liquidation of the company
 
+    BaseKT : 'Kind/Term' -> 'Kind/Term' -> ListKindTerm ;
+    ConsKT : 'Kind/Term' -> ListKindTerm -> ListKindTerm ;
     ConjSlashTerm -- "liquidation and dissolution of the company"
-     : Conjunction -> ['Kind/Term'] -> 'Kind/Term' ;
+     : Conjunction -> ListKindTerm -> 'Kind/Term' ;
 
     -----------
     -- Terms --
@@ -132,13 +145,22 @@ abstract SAFEQuery = Query ** {
       Kind -> Term ->
       Term ;
 
-    UnderWhich
-      : Term -> -- the contract, (under which)
-      Term ->   -- the Company
-      Action -> -- sells stock
-      Term ;
+    RelIndir
+      : Term ->       -- the contract
+      Term ->         -- the Company
+      Temporality ->  -- (will)
+      'Action/Indir' -> -- sell(s) stock (under)
+      Term ; -- the contract, under which the company sells stock
 
-    Series,   -- a series of transactions
+    RelDir
+      : Term ->       -- the contract
+      Term ->         -- the Company
+      Temporality ->  -- (will)
+      'Action/Dir' ->   -- sign(s)
+      Term ; -- the contract, which the company signs/will sign
+
+
+    --Series,   -- a series of transactions
     AnyOther  -- any other liquidation, dissolution or winding up
       : Determiner ;
 
