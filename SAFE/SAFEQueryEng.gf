@@ -449,12 +449,14 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
 
     -- : Term -> Term -> Temporality -> Action/Indir -> Term ;
     RelIndir iobj subj tense vpslash =
-      let rs : RS = relAction tense subj vpslash.indir <vpslash : LinAction>
+      let vp : LinAction = complIndir (vpslash ** {indir=emptyPrep}) emptyTerm ;
+          rs : RS = relAction tense subj vpslash.indir vp ;
        in mkNP iobj rs ;
 
     -- : Term -> Term -> Temporality -> Action/Dir -> Term ;
     RelDir dobj subj tense vpslash =
-      let rs : RS = relAction tense subj vpslash.dir <vpslash : LinAction>
+      let vp : LinAction = complDir (vpslash ** {dir=emptyPrep}) emptyTerm ;
+          rs : RS = relAction tense subj vpslash.dir vp ;
        in mkNP dobj rs ;
 
 
@@ -490,7 +492,7 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
     including_Prep : Prep =  -- endComma: disappears in front of other punctuation
       mkPrep ("including" ++ strOpt ("but not limited to" ++ Prelude.endComma)) ;
     pursuant_to_Prep : PrepPol = prepPol "pursuant to" ;
-
+    emptyPrep : PrepPol = prepPol "" ;
 
     ----------
     -- Misc --
