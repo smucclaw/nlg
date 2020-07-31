@@ -18,30 +18,18 @@ disambiguateMove :: GMove -> [GMove]
 disambiguateMove = mapMaybe expandRelative . findTerms
 
 findTerms :: GMove -> [GTerm]
-findTerms move = -- concatMap termsInKinds kinds ++ terms
+findTerms move =
   toListOf termsInKindsInTerms move ++ toListOf termsIn move
  where
-  -- terms = termsInMove move
-  -- kinds = concatMap kindsInTerm terms
-
+  -- Giving names and type signatures to template
   termsInKindsInTerms :: Traversal' GMove GTerm
   termsInKindsInTerms = termsIn . kindsInTerm . termsIn
 
-  -- Giving names to these, confusing with "toListOf template" everywhere
   termsIn :: (Data s) => Traversal' s GTerm
   termsIn = template
 
   kindsInTerm :: Traversal' GTerm GKind
   kindsInTerm = template
-
--- termsInMove :: GMove -> [GTerm]
--- termsInMove = toListOf template
-
--- termsInKind :: GKind -> [GTerm]
--- termsInKind = toListOf template
-
--- kindsInTerm :: GTerm -> [GKind]
--- kindsInTerm = toListOf template
 
 {- The most important function: expands relative clauses like
    "a contract, under which the Company sells stock"
