@@ -26,10 +26,12 @@ concrete MicroLangMay of MicroLang = open ResMay in {
     Pron    -- personal pronoun                    e.g. "she"
      = Pronoun ;
 
-    N,      -- common noun                         e.g. "house"
-    CN,     -- common noun (without determiner)    e.g. "red house"
+    N      -- common noun                         e.g. "house"
+     =  Noun;
+    CN     -- common noun (without determiner)    e.g. "red house"
+     =  Noun;
     NP      -- noun phrase (subject or object)     e.g. "the red house"
-     = Noun ;
+     = {s : Str} ;
 
     VP,     -- verb phrase                         e.g. "lives here"
     Comp,   -- complement of copula                e.g. "warm"
@@ -49,14 +51,15 @@ concrete MicroLangMay of MicroLang = open ResMay in {
 
 -- Sentence
     -- : NP -> VP -> S ;             -- John walks
-    PredVPS np vp = {s = np.s ++ vp.s} ;
+    PredVPS np vp = {s = np.s ++ vp.s ! Active} ;
 
 -- Verb
     -- : V   -> VP ;             -- sleep
     UseV v = v ;
 
     -- : V2  -> NP -> VP ;       -- love it
-    ComplV2 v2 np = {s = v2.s ++ np.s} ;
+    ComplV2 v2 np = {s = table {
+      form => v2.s ! form ++ np.s}} ;
 
     -- : Comp  -> VP ;           -- be small
     UseComp comp = {s = comp.s} ;
@@ -65,12 +68,13 @@ concrete MicroLangMay of MicroLang = open ResMay in {
     CompAP ap = ap ;
 
     -- : VP -> Adv -> VP ;       -- sleep here
-    AdvVP vp adv = {s = vp.s ++ adv.s} ;
+    AdvVP vp adv =  {s = table {
+      form => vp.s ! form ++ adv.s}} ;
 
 -- Noun
     -- : Det -> CN -> NP ;       -- this man
     DetCN det cn = {
-      s = det.s ++ cn.s ;
+      s = cn.s ! det.n ++ det.s ;
     } ;
 
     -- : Pron -> NP ;            -- she
@@ -78,21 +82,29 @@ concrete MicroLangMay of MicroLang = open ResMay in {
 
     -- : Det ;                   -- no articles: linearize as an empty string
     a_Det,
-      aPl_Det,
-      the_Det,
-      thePl_Det = mkDet "" ;
+      the_Det = mkDet "" Singular ;
+
+    aPl_Det,
+      thePl_Det = mkDet "" Plural ;
 
     -- : Det ;                   -- this
-    this_Det = mkDet "ini" ;
+    this_Det = mkDet "ini" Singular ;
 
     -- : Det ;                   -- that
-    that_Det = mkDet "itu" ;
+    that_Det = mkDet "itu" Singular ;
 
+    -- : Det ;                   -- these
+    these_Det = mkDet "ini" Plural ;
+
+    -- : Det ;                   -- those
+    those_Det = mkDet "itu" Plural ;
+    
     -- : N -> CN ;               -- house
     UseN n = n ;
 
     -- : AP -> CN -> CN ;        -- big house
-    AdjCN ap cn = {s = ap.s ++ cn.s} ;
+    AdjCN ap cn = {s = table {
+      num => cn.s ! num ++ ap.s ! Base}} ;
 
 -- Adjective
     -- : A  -> AP ;              -- warm
@@ -104,8 +116,8 @@ concrete MicroLangMay of MicroLang = open ResMay in {
 
 -- Structural
     -- : Prep ;
-    in_Prep = mkPrep "di" ;
-    on_Prep = mkPrep "di" ;
+    in_Prep = mkPrep "di dalam" ;
+    on_Prep = mkPrep "di atas" ;
     with_Prep = mkPrep "dengan" ;
 
     he_Pron   = mkPron "dia"   ;
@@ -145,11 +157,12 @@ lin
   cloud_N = mkN "cloud" ;
   cold_A = mkA "cold" ;
   come_V = mkV "come" ;
-  computer_N = mkN "computer" ;
-  cow_N = mkN "cow" ;
-  dirty_A = mkA "dirty" ;
-  dog_N = mkN "dog" ;
-  drink_V2 = mkV2 "drink" ; -}
+-}
+  computer_N = mkN "komputer" ;
+  cow_N = mkN "lembu" ;
+  dirty_A = mkA "kotor" ;
+  dog_N = mkN "anjing" ;
+  drink_V2 = mkV2 "minum" ; 
   eat_V2 = mkV2 "makan" ;
 {-  find_V2 = mkV2 "find" ;
   fire_N = mkN "fire" ;
@@ -158,7 +171,8 @@ lin
   friend_N = mkN "friend" ;
   girl_N = mkN "girl" ;
   good_A = mkA "good" ;
-  go_V = mkV "go" ;  -}
+-}
+  go_V = mkV "pergi" ;  
   grammar_N = mkN "tatabahasa" ;
   green_A = mkA "hijau" ;
 {-  heavy_A = mkA "heavy" ;
@@ -195,7 +209,7 @@ lin
   tree_N = mkN "tree" ;
   understand_V2 = mkV2 "understand" ;
   wait_V2 = mkV2 "wait" ; -}
-  walk_V = mkV "berjalan" ;
+  walk_V = mkV "jalan" ;
 {-  warm_A = mkA "warm" ;
   water_N = mkN "water" ;
   white_A = mkA "white" ;

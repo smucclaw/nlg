@@ -51,6 +51,8 @@ abstract MicroLang = {
     thePl_Det : Det ;                   -- definite plural
     this_Det  : Det ;
     that_Det  : Det ;
+    these_Det : Det ;
+    those_Det : Det ;
     UseN      : N -> CN ;               -- house
     AdjCN     : AP -> CN -> CN ;        -- big house
 

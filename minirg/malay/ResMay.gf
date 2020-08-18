@@ -8,16 +8,27 @@ resource ResMay = {
 oper
 
 -- Determiners
-  Determiner : Type = {s : Str} ;
+  Determiner : Type = {s : Str; n: Number} ;
 
-  mkDet : Str -> Determiner ;
-  mkDet str  = {s = str} ;
+  mkDet : Str -> Number -> Determiner ;
+  mkDet str num = {s = str; n = num} ;
 
 -- Nouns
-  Noun : Type = {s : Str} ;
+  Noun : Type = {s : Number => Str} ;
 
   mkN : Str -> Noun ;
-  mkN str = {s = str} ;
+  mkN str = {s = table {
+    Singular => str;
+    Plural => str + "-" + str }
+  } ;
+
+param
+
+  Number = Singular | Plural ;
+
+oper
+
+
 
 -- Pronouns
   Pronoun : Type = {s : Str} ;
@@ -26,18 +37,28 @@ oper
   mkPron str = {s = str} ;
 
   -- Verbs
-  Verb : Type = {s : Str} ;
+  Verb : Type = {s : Verbform => Str} ;
+
+  param
+    Verbform = Active | Base ;  
+  oper
 
   mkV : Str -> Verb ;
-  mkV str = {s = str} ;
+  mkV str = {s = table {
+    Base => str;
+    Active => case str of { 
+      ("m" | "p" | "b") + _ => "me" + str;
+      _ => "ber" + str 
+    } 
+  }} ;
 
   mkV2 : Str -> Verb ;
-  mkV2 str = {s = str} ;
+  mkV2 = mkV ;
 
   -- Adjectives are verbs, as per
   -- https://en.wikipedia.org/wiki/Malay_grammar#Descriptive_stative_verbs
   mkA : Str -> Verb ;
-  mkA str = {s = str} ;
+  mkA str = {s = \\_=> str} ;
 
   -- Adverbials
   Adverbial : Type = {s : Str} ;
