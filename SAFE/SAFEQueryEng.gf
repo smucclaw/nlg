@@ -287,7 +287,8 @@ concrete SAFEQueryEng of SAFEQuery = QueryEng **
 
     -- helpers for complDir and complIndir
     complS : E.VPS -> Adv -> Adv -> E.VPS = \vps,dir,indir -> lin VPS {
-      s = \\a => vps.s ! a ++ dir.s ++ indir.s
+      s = \\o,a => let vp = vps.s ! o ! a
+                    in vp ** {inf = vp.inf ++ dir.s ++ indir.s}
       } ;
     complGer : (a,b,c : Adv) -> Adv = \ger,indir,dir -> lin Adv {
       s = ger.s ++ dir.s ++ indir.s

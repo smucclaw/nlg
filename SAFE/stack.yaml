@@ -1,4 +1,4 @@
-resolver: lts-12.26
+resolver: lts-20.2
 
 packages:
 - .
@@ -7,12 +7,15 @@ packages:
 local-bin-path: .
 
 extra-deps:
-# - github: GrammaticalFramework/gf-core
-#   commit: d06539c # release 3.10
-- gf-3.10
-- cgi-3001.3.0.3 # dependency of gf
+- github: smucclaw/gf-core
+  commit: edb55df7b0c4892ba0bac2817b5f493921c20c36
+- cgi-3001.5.0.0@sha256:3d1193a328d5f627a021a0ef3927c1ae41dd341e32dba612fed52d0e3a6df056,2990
+- multipart-0.2.1@sha256:c96322a5bb34c29738ba82345d071a8e07d752648de3522f1c04d96df955ea0d,1150
+
+allow-newer: true
 
 flags:
      # this excludes PGF2 module in gf package
   gf:
     c-runtime: false
+

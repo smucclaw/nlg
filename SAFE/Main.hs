@@ -32,10 +32,10 @@ apply tr gr s = case parseAllLang gr (startCat gr) s of
     "":
     "The sentence has the following interpretations:":
     "":
-    (nub [ "* " ++ unlines
-           (linearize gr lg `fmap` interpretations)
-         | t <- ts
-         , let interpretations = tr t ])
+    nub [ "* " <> unlines
+          (prTreeAndLin gr lg <$> interpretations)
+        | t <- ts
+        , let interpretations = tr t ]
 
   _ -> case last s of
     '.' -> noparse
@@ -43,8 +43,9 @@ apply tr gr s = case parseAllLang gr (startCat gr) s of
                  result
                  | suf <- [" .", " , ."]
                  , let result = apply tr gr (s ++ suf)
-                 , not $ result == noparse ]
+                 , result /= noparse ]
            in last $ noparse:variants
 
   where
     noparse = "Can't parse the input."
+    prTreeAndLin gr lg tree = unlines [linearize gr lg tree, showExpr [] tree]
